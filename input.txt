@@ -1,7 +1,15 @@
-//const pi = 3.14;
+func split(sum int)(x, y int) {
+	const pi = 1.14 + 2;
+	var pi int = 2 + 1.14;
+};
+/*func split(sum int) (x, y int) {
+	x = ((sum * 4) / 9);
+	y = sum - x;
+	return;
+}*/
 
-func split(sum int) (x, y int) {
-	x = sum * 4 / 9
-	y = sum - x
-	return
-}
+/*func split(sum int) (x, y bool) {
+	x = true;
+	y = false;
+	return;
+};*/

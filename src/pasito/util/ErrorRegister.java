@@ -3,7 +3,7 @@ package pasito.util;
 import java.util.ArrayList;
 
 public class ErrorRegister {
-	private static ArrayList<Erro> e = new ArrayList<Erro>();
+	public static ArrayList<Erro> e = new ArrayList<Erro>();
 	 
 	public static void report(String mensagem) {
         e.add(new Erro(mensagem));

@@ -25,6 +25,7 @@ public interface sym {
   public static final int COMMA = 42;
   public static final int DIV = 29;
   public static final int FLOAT_NUMBER = 25;
+  public static final int DIGIT = 23;
   public static final int PLUS = 26;
   public static final int ASSIGN = 40;
   public static final int LSBRACK = 36;
@@ -38,7 +39,6 @@ public interface sym {
   public static final int TRUE = 19;
   public static final int error = 1;
   public static final int FLOAT64 = 22;
-  public static final int NUMBER = 23;
   public static final int EQ = 31;
   public static final int DASSIGN = 41;
   public static final int LBRACK = 38;
@@ -79,7 +79,7 @@ public interface sym {
   "FALSE",
   "INT32",
   "FLOAT64",
-  "NUMBER",
+  "DIGIT",
   "INT_NUMBER",
   "FLOAT_NUMBER",
   "PLUS",

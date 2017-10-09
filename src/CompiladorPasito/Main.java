@@ -27,12 +27,13 @@ import pasito.ast.statement.Statement;
 import pasito.ast.topLevelDecl.FunctionDecl;
 import pasito.ast.topLevelDecl.TopLevelDecl;
 import pasito.ast.type.TypeName;
+import pasito.staticSemantics.Analyser;
 import pasito.syntax.Lexer;
 import pasito.syntax.Parser;
 import pasito.syntax.sym;
  
 public class Main {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception{
         //String caminho = Paths.get("").toAbsolutePath().toString();
         /*String codigoFonte = "input.txt";
         
@@ -55,18 +56,23 @@ public class Main {
 			while (s.sym != sym.EOF && s != null) { // Enquanto houverem novos tokens...
 			    s = lexical.next_token();
 			}
-			System.out.println("EOF");
+			//System.out.println("EOF");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
 		
 		/*try {
 	        Parser p = new Parser(new Lexer(new FileReader("input.txt")));
 			Object result = p.parse().value;
-	        System.out.println(result.toString());    
+	        System.out.println("Sucesso :)");    
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		
+		/*try {
+			PrettyPrint printer = new PrettyPrint(Test.ProgramTeste());
+			printer.erros.mostrar();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}*/
 		
@@ -74,60 +80,48 @@ public class Main {
 	        Parser p = new Parser(new Lexer(new FileReader("input.txt")));
 			Object result = p.parse().value;
 			PrettyPrint printer = new PrettyPrint((Program) result);
+			printer.erros.mostrar();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
 		
+		
+		/*Parser p = null;
 		try {
-			PrettyPrint printer = new PrettyPrint(ProgramTeste());
-			printer.erros.mostrar();
+	        p = new Parser(new Lexer(new FileReader("input.txt")));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	public static Program ProgramTeste() {
-        /* 	func split(sum int) (x, y int) {
-				x = sum * 4 / 9
-				y = sum - x
-				return
-			}
-         */
 		
-        List<FormalParameter> inPars = new LinkedList<>();
-        inPars.add(new FormalParameter("sum", new TypeName("int")));
+        Analyser analyser = new Analyser();
+        if (p!= null) {
+        	Program prog = (Program) analyser.VisitProgram((Program) p.parse().value);
+    		PrettyPrint printer = new PrettyPrint(prog);
+    		analyser.erros.mostrar();
+    		printer.erros.mostrar();
+		}*/
         
-        List<FormalParameter> outPars = new LinkedList<>();
-        outPars.add(new FormalParameter("x", new TypeName("int")));
-        outPars.add(new FormalParameter("y", new TypeName("int")));
-
-        Signature sig = new Signature(inPars, null, outPars);
         
-        List<Statement> stmts = new LinkedList<>();
-        BinaryExpression op1 = new BinaryExpression(BinaryOperator.MULT, new IdExpression("sum"), new IntLiteral(4));
-        BinaryExpression op2 = new BinaryExpression(BinaryOperator.DIV, op1, new IntLiteral(9));
-        VarDecl vdecl = new VarDecl("x", null, op2);
-        DeclarationStm declarationStm = new DeclarationStm(vdecl);
-        stmts.add(declarationStm);
-        
-        BinaryExpression op3 = new BinaryExpression(BinaryOperator.MINUS, new IdExpression("sum"), new IdExpression("x"));
-        VarDecl vdecl2 = new VarDecl("y", null, op3);
-        DeclarationStm declarationStm2 = new DeclarationStm(vdecl2);
-        stmts.add(declarationStm2);
-
-        ReturnStmt r = new ReturnStmt(null);
-        stmts.add(r);
-
-        Block body = new Block(stmts);
-        
-        FunctionDecl fdcl = new FunctionDecl("split", sig, body);
-        
-        List<TopLevelDecl> declarations = new LinkedList<>();
-        declarations.add(fdcl);
-        Program program = new Program(declarations);
-
-        return program;
-    }
+        try {
+        	Parser p = new Parser(
+                    new Lexer(new FileReader("input.txt")));
+        	Program result = (Program) p.parse().value;            
+            Analyser analyser = new Analyser();
+            analyser.VisitProgram(result);
+            
+            if (analyser.erros.e.size() > 0) {
+    	        System.out.println("Erros da checagem de Tipos:");    
+                analyser.erros.mostrar();
+			}
+            
+            PrettyPrint printer = new PrettyPrint(result);
+            if (printer.erros.e.size() > 0) {
+    	        System.out.println("Erros do Printer:");    
+        		printer.erros.mostrar();
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
 }

@@ -77,9 +77,10 @@ public class PrettyPrint implements PasitoVisitor {
 	@Override
 	public Object VisitProgram(Program program) {
 		StringBuilder result = new StringBuilder();
-		for (TopLevelDecl declaration : program.declarations) {
-			result.append(print(declaration.accept(this) + ";", true));
-		}
+		if(program != null)
+			for (TopLevelDecl declaration : program.declarations) {
+				result.append(print(declaration.accept(this) + ";\n", true));
+			}
 		return result.toString();
 	}
 
@@ -116,24 +117,28 @@ public class PrettyPrint implements PasitoVisitor {
 		StringBuilder result = new StringBuilder();
 		
 		result.append('(');
-		for (FormalParameter parameter : signature.inPars) {
-			result.append(parameter.accept(this));
-			result.append(", ");
+		if (signature.inPars != null){
+			for (FormalParameter parameter : signature.inPars) {
+				result.append(parameter.accept(this));
+				result.append(", ");
+			}
+			result.replace(result.length() -2, result.length(), "");
 		}
-		result.replace(result.length() -2, result.length(), "");
 
-		if (signature.variadicPar != null) {
+		if (signature.variadicPar != null || signature.variadicPar != null) {
 			result.append(", ");
 			result.append(signature.variadicPar.accept(this));
 		}
 		result.append(')');
 
 		result.append(" (");
-		for (FormalParameter parameter : signature.outPars) {
-			result.append(parameter.accept(this));
-			result.append(", ");
+		if (signature.outPars != null){
+			for (FormalParameter parameter : signature.outPars) {
+				result.append(parameter.accept(this));
+				result.append(", ");
+			}
+			result.replace(result.length() -2, result.length(), "");
 		}
-		result.replace(result.length() -2, result.length(), "");
 		result.append(')');
 		
 		return result.toString();
@@ -142,24 +147,25 @@ public class PrettyPrint implements PasitoVisitor {
 	@Override
 	public Object VisitConstDecl(ConstDecl constDecl) {
 		StringBuilder sb = new StringBuilder();
-
-		sb.append("const " + constDecl.name + " ");
+		sb.append("const " + constDecl.name);
+		
 		if (constDecl.type != null) 
-			sb.append(constDecl.type.accept(this));
+			sb.append(" " + constDecl.type.accept(this));
+		
+		sb.append(" = ");
 		sb.append(constDecl.exp.accept(this));
-
 		return sb.toString();
 	}
 
 	@Override
 	public Object VisitVarDecl(VarDecl varDecl) {
 		StringBuilder sb = new StringBuilder();
-
-		sb.append("var " + varDecl.name + " ");
+		sb.append("var " + varDecl.name);
 		
 		if (varDecl.type != null) 
-			sb.append(varDecl.type.accept(this));
+			sb.append(" " + varDecl.type.accept(this));
 		
+		sb.append(" = ");
 		sb.append(varDecl.exp.accept(this));
 		return sb.toString();
 	}
@@ -182,7 +188,9 @@ public class PrettyPrint implements PasitoVisitor {
 			sb.append(formalParameter.name);
 			sb.append(" ");
 		}
-		sb.append(formalParameter.type.accept(this));
+		
+		if (formalParameter.type != null) 
+			sb.append(formalParameter.type.accept(this));
 
 		return sb.toString();
 	}
