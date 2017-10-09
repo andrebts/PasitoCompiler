@@ -57,7 +57,7 @@ import pasito.util.ErrorRegister;
  * depending on the type of the constant
 */
 public class ConstantExpressionEavaluator implements PasitoVisitor {
-
+ 
 	SymbolTable<Binding> env;
 	
 	public ConstantExpressionEavaluator(SymbolTable<Binding> env) {

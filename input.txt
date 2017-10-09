@@ -1,15 +1,14 @@
-func split(sum int)(x, y int) {
+func calcPi(sum int)(x, y int) {
 	const pi = 1.14 + 2;
-	var pi int = 2 + 1.14;
+	var e float = 2 + 0.71828;
 };
-/*func split(sum int) (x, y int) {
-	x = ((sum * 4) / 9);
-	y = sum - x;
-	return;
-}*/
 
-/*func split(sum int) (x, y bool) {
-	x = true;
-	y = false;
-	return;
-};*/
+func s() {
+	for i = 0; i < 10; i++ {
+		if i < 4 {
+			calcPi(i);
+			i = 3
+			x = 2
+		}
+	}
+};

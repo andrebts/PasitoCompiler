@@ -101,8 +101,6 @@ public class Main {
     		printer.erros.mostrar();
 		}*/
         
-        
-        try {
         	Parser p = new Parser(
                     new Lexer(new FileReader("input.txt")));
         	Program result = (Program) p.parse().value;            
@@ -112,16 +110,14 @@ public class Main {
             if (analyser.erros.e.size() > 0) {
     	        System.out.println("Erros da checagem de Tipos:");    
                 analyser.erros.mostrar();
-			}
+			} else
+    	        System.out.println("Nenhum erro no Analyser.");    
             
             PrettyPrint printer = new PrettyPrint(result);
             if (printer.erros.e.size() > 0) {
     	        System.out.println("Erros do Printer:");    
         		printer.erros.mostrar();
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            } else
+    	        System.out.println("Nenhum erro no Printer.");    
 	}
 }

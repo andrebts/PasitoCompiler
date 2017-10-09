@@ -12,7 +12,7 @@
 
 	  <target name="generate">
 	    
-	    <cup debugsymbols="true" destdir="${java}" expect="0" force="true" interface="true" locations="true" parser="Parser" srcfile="${base}/parser.cup"/>
+	    <cup debugsymbols="true" destdir="${java}" expect="1" force="true" interface="true" locations="true" parser="Parser" srcfile="${base}/parser.cup"/>
 	  	<jflex destdir="${java}" file="lexer.jflex"/>
 	  </target>
 

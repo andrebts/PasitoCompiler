@@ -10,6 +10,7 @@ import pasito.ast.declaration.ConstDecl;
 import pasito.ast.declaration.TypeDecl;
 import pasito.ast.declaration.VarDecl;
 import pasito.ast.element.ExpressionElement;
+import pasito.ast.element.Identifier;
 import pasito.ast.element.KeyedElement;
 import pasito.ast.element.LiteralElement;
 import pasito.ast.expression.BinaryExpression;
@@ -64,6 +65,7 @@ import pasito.staticSemantics.binding.Fun;
 import pasito.staticSemantics.binding.Ty;
 import pasito.staticSemantics.binding.Var;
 import pasito.staticSemantics.type.ArrayTp;
+import pasito.staticSemantics.type.Kind;
 import pasito.staticSemantics.type.PointerTp;
 import pasito.staticSemantics.type.Primitive;
 import pasito.staticSemantics.type.Type;
@@ -123,7 +125,7 @@ public class Analyser implements PasitoVisitor {
 	}
 
 	@Override
-	public Object VisitMethodDecl(MethodDecl methodDecl) { // Eu que fiz
+	public Object VisitMethodDecl(MethodDecl methodDecl) {
 		methodDecl.sig.accept(this); // visita a assinatura
 		methodDecl.receiver.accept(this); // visita o receiver
 		methodDecl.body.accept(this); // visita o corpo 
@@ -132,15 +134,19 @@ public class Analyser implements PasitoVisitor {
 	}
 
 	@Override
-	public Object VisitSignature(Signature signature) { // Eu que fiz - Retornar um Binding
-		// Visito todos os parametros formais de Entrada	
+	public Object VisitSignature(Signature signature) { 
+		
 		List<Type> pin = new LinkedList<>();
 		List<Type> pout = new LinkedList<>();
 		Type variadic = null;
-		for(FormalParameter fp : signature.inPars) {
-			Type ty = (Type) fp.type.accept(this);
-			pin.add(ty);
-		}
+		
+		if (signature.inPars != null) 
+			for(FormalParameter fp : signature.inPars) {
+				Type ty = (Type) fp.type.accept(this);
+				pin.add(ty);
+			}
+		
+		if (signature.outPars != null) 
 		for(FormalParameter fp : signature.outPars) {
 			Type ty = (Type) fp.type.accept(this);
 			pout.add(ty);
@@ -154,11 +160,10 @@ public class Analyser implements PasitoVisitor {
 	}
 
 	@Override
-	public Object VisitConstDecl(ConstDecl constDecl) { // Professor que fez
+	public Object VisitConstDecl(ConstDecl constDecl) { 
 		if (constDecl.exp == null) {
 			ErrorRegister.report("error: Declaração de Constante NULA");
-			/* adicionar alguma entrada em env para recupera��o de erros */
-			return null; // Retornar um objeto elegante;
+			return null; 
 		} 
 		
 		Object value =  constDecl.exp.accept(constEvaluator);
@@ -184,7 +189,7 @@ public class Analyser implements PasitoVisitor {
 
 	
 	@Override
-	public Object VisitVarDecl(VarDecl varDecl) { // Professor que fez
+	public Object VisitVarDecl(VarDecl varDecl) { 
 		Type ty = (Type) varDecl.exp.accept(this);
 		try {
 			env.put(varDecl.name, new Var(ty));
@@ -218,7 +223,6 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitArrayType(ArrayType arrayType) {
-		// TODO Auto-generated method stub
 		Type tEle = (Type) arrayType.elemType.accept(this);
 		Object value = arrayType.length.accept(this);
 		int v;
@@ -234,7 +238,6 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitBaseType(PointerType pointerType) {
-		// TODO Auto-generated method stub
 		Type ty = (Type) pointerType.baseType.accept(this);		
 		return new PointerTp(ty);
 	}
@@ -430,14 +433,26 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitIfStmt(IfStmt ifStmt) {
-		// TODO Auto-generated method stub
-		return null;
+		Type t = (Type) ifStmt.exp.accept(this);
+        if (! t.equals(Kind.BOOLEAN)) {
+            erros.report("Esperada uma expressão do tipo boolean, recebido argumento tipo" + t + " inválido.");
+        }
+        ifStmt.initStmt.accept(this);
+        ifStmt.block.accept(this);
+        return null;
 	}
 
 	@Override
 	public Object VisitIfElseStmt(IfElseStmt ifElseStmt) {
-		// TODO Auto-generated method stub
-		return null;
+		Type t = (Type) ifElseStmt.exp.accept(this);
+        if (! t.equals(Kind.BOOLEAN)) {
+            erros.report("Esperada uma expressão do tipo boolean, recebido argumento tipo" + t + " inválido.");
+        }
+        
+        ifElseStmt.initStmt.accept(this);
+        ifElseStmt.leftBlock.accept(this);
+        ifElseStmt.rightBlock.accept(this);
+        return null;
 	}
 
 	@Override
@@ -469,5 +484,4 @@ public class Analyser implements PasitoVisitor {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }

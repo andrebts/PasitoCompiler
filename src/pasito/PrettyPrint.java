@@ -412,7 +412,8 @@ public class PrettyPrint implements PasitoVisitor {
 		result.replace(result.length() - 1, result.length(), "");
 		result.append(")");
 
-		result.append(callExpression.variadicArg.accept(this));
+		if (callExpression.variadicArg != null) 
+			result.append(callExpression.variadicArg.accept(this));
 		return result;
 	}
 
@@ -487,7 +488,7 @@ public class PrettyPrint implements PasitoVisitor {
 		// Pega todas as expressões da esquerda
 		for (Expression exp : assignment.leftExps.subList(0, sizeLeft))
 			sb.append((String) exp.accept(this) + ',');
-		sb.append(assignment.leftExps.get(sizeLeft));
+		sb.append(assignment.leftExps.get(sizeLeft).accept(this));
 
 		// adiciona sinal =
 		sb.append(" = ");
@@ -495,7 +496,7 @@ public class PrettyPrint implements PasitoVisitor {
 		// Pega todas as expressões da direita
 		for (Expression exp : assignment.rightExps.subList(0, sizeRight))
 			sb.append((String) exp.accept(this) + ',');
-		sb.append(assignment.rightExps.get(sizeRight));
+		sb.append(assignment.rightExps.get(sizeRight).accept(this));
 
 		return sb.toString();
 	}

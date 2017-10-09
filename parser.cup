@@ -40,6 +40,7 @@ init with {:
 
 scan with {: return lexer.next_token(); :};
 
+/* @@@@@@@@@@@@ terminais (tokens retornados pelo analisador léxico, utilizados para criar classe Symbol) @@@@@@@@@@@@ */
 terminal String ID;
 terminal DEFAULT, FUNC, INTERFACE,FALLTHROUGH, CASE, STRUCT, TYPE, ELSE, SWITCH, IF, CONST, VAR;
 terminal FOR, RETURN, RANGE, BOOLEAN;
@@ -48,7 +49,7 @@ terminal INT32, FLOAT64, DIGIT;
 terminal Integer INT_NUMBER ;
 terminal Float FLOAT_NUMBER;
 terminal PLUS, MINUS, MULT, DIV, AND, EQ, LT;
-terminal NOT;
+terminal NOT, EXCL;
 terminal LPAR, RPAR, LSBRACK, RSBRACK, LBRACK,
          RBRACK, ASSIGN, DASSIGN, COMMA, SEMICOLON, DOTDOTDOT, COLON, DOT;
 
@@ -77,14 +78,14 @@ non terminal Pair<List <FormalParameter>, Pair<String,Type>> ParameterList;
 non terminal Pair<List <FormalParameter>, Pair<String,Type>> ParameterDeclList; 
 non terminal List <Type> TypeList;
 non terminal List <Type> Types;
-non terminal List<IdExpression> IdentifierList;
+non terminal List<String> IdentifierList;
 non terminal Expression Expression;
 non terminal List<Expression> ExpressionList;
-//non terminal CompExpression;
-//non terminal AddExpression;
-//non terminal MultExpression;
-//non terminal Args;
-//non terminal MethodExpr;
+non terminal CompExpression; // não usei e não tem a classe e nem a produção
+non terminal AddExpression; // não usei e não tem a classe e nem a produção
+non terminal MultExpression; // não usei e não tem a classe e nem a produção
+non terminal Args; // não usei e não tem a classe e nem a produção
+non terminal MethodExpr; // não usei, a produção foi retirada do projeto
 non terminal Expression UnaryExpr;
 non terminal UnaryOperator unary_op;
 non terminal Expression PrimaryExpr;
@@ -116,26 +117,26 @@ precedence left LT, EQ;
 precedence left PLUS, MINUS;
 precedence left MULT , DIV;
 
-Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog 
+Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog //ok
              {: prog.declarations.addAll(0,topDecs);
               RESULT = prog; :}
 		  |  {: RESULT = new Program(new LinkedList<>()); :} 
 		    ;
 			
-TopLevelDecl ::=  Declaration  : decl  
+TopLevelDecl ::=  Declaration  : decl  // ok
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();
                     for (Declaration d : decl)
 						tld.add(new Dec(d));
 					RESULT = tld; 
 				:} 
-				| FunctionDecl : func 
+				| FunctionDecl : func // ok
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();                    
 					tld.add(func);
 					RESULT = tld; 
 				:} 				
-				| MethodDecl  : method 
+				| MethodDecl  : method //ok
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();                    
 					tld.add(method);
@@ -143,13 +144,13 @@ TopLevelDecl ::=  Declaration  : decl
 				:} 	
 				;
 
-Declaration ::= ConstDecl  : constDecl	 
+Declaration ::= ConstDecl  : constDecl	 // ok
 			   {: 				
 					List<Declaration> dec = new LinkedList<>();
 					for(ConstDecl c: constDecl)
 						dec.add(c);
 				RESULT = dec;
-			  :}
+			  :}		 
 			  | VarDecl : varDecl
 			  {:
 					List<Declaration> dec = new LinkedList<>();	
@@ -158,7 +159,7 @@ Declaration ::= ConstDecl  : constDecl
 						dec.add(v);		
 					RESULT = dec;
 			  :}
-			  | TypeDecl : typeDecl  
+			  | TypeDecl : typeDecl  // ok
 			  {:	
 					List<Declaration> dec = new LinkedList<>();
 					for(TypeDecl d: typeDecl)
@@ -167,7 +168,7 @@ Declaration ::= ConstDecl  : constDecl
 			  :}
 			  ;
 
-TypeDecl ::= TYPE ID:nm Type :type  
+TypeDecl ::= TYPE ID:nm Type :type  // ok
 			{: 	
 				List<TypeDecl> td = new LinkedList<>(); 
 				td.add(new TypeDecl(nm, type));						
@@ -180,7 +181,7 @@ TypeDecl ::= TYPE ID:nm Type :type
 			:} 
            ;
 
-TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs 
+TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs // ok
 				{:					
 					tyDecs.add(0, new TypeDecl(nm, type));
 					RESULT = tyDecs;
@@ -189,7 +190,8 @@ TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs
 				| {: RESULT = new LinkedList<>(); :}
 				;
 
-Type ::= TypeLit : Tlit
+Type ::=  ID : id {: RESULT = new TypeName(id); :} // ok
+		| TypeLit : Tlit
 		{:
 			RESULT = Tlit; 
 		:}
@@ -213,49 +215,47 @@ TypeLit ::= ArrayType : array
      	  | FLOAT64 {: RESULT = new TypeName("float"); :}
 		   ;
 
-StructType ::= STRUCT LBRACK FieldDeclList : fieldDec RBRACK 
+StructType ::= STRUCT LBRACK FieldDeclList : fieldDec RBRACK // ok
 			{: RESULT = new StructType(fieldDec); :};
 
-ArrayType ::= LSBRACK Expression: exp RSBRACK Type : type   
+ArrayType ::= LSBRACK Expression: exp RSBRACK Type : type   // ok
 			{:
 				RESULT = new ArrayType(exp, type);
 			:}
 			;
 
-SliceType ::= LSBRACK RSBRACK Type : type  
+SliceType ::= LSBRACK RSBRACK Type : type  //ok
 			{: RESULT = new SliceType(type); :} ;
 
-FieldDeclList ::= FieldDecl : fieldecl SEMICOLON FieldDeclList : fieldeclList  
+FieldDeclList ::= FieldDecl : fieldecl SEMICOLON FieldDeclList : fieldeclList  // ok
 				{: 
 					fieldeclList.add(0,fieldecl);
 					RESULT = fieldeclList;
 				 :}
 				| {: RESULT = new LinkedList<>(); :};
 
-FieldDecl ::=  ID : name Type : type {: RESULT = new FieldDecl(name,type); :}  
+FieldDecl ::=  ID : name Type : type {: RESULT = new FieldDecl(name,type); :}  // ok
 			 | ID : name {: RESULT = new FieldDecl(name,null); :}
 			 | MULT ID: name {: RESULT = new FieldDecl(name,null); :} ;			 
 
-MethodSpecList ::= MethodSpec : method SEMICOLON MethodSpecList : listMethod  
+MethodSpecList ::= MethodSpec : method SEMICOLON MethodSpecList : listMethod  // ok
 				{: 
 					listMethod.add(0,method);				
 					RESULT = listMethod;
 				 :}
 				| {: RESULT = new LinkedList<>(); :};
 
-MethodSpec ::= ID :id Signature : sig  
+MethodSpec ::= ID :id Signature : sig  // ok
 				{: RESULT = new MethodSpec(id,sig); :}
 			 | ID :id
 			 	{: RESULT = new MethodSpec(id,null); :}
 			 ;
 
-Signature ::= Parameters : par 
+Signature ::= Parameters : par  // Veriricar o retorno...
 				{:
-					FormalParameter fp = null;
-					if(par.snd != null)
-						fp = new FormalParameter(par.snd.fst, par.snd.snd);	
-								
-					RESULT = new Signature(par.fst, fp, null);				
+					FormalParameter fp = new FormalParameter(par.snd.fst,par.snd.snd);									
+					RESULT = new Signature(par.fst,fp, null);				
+
 				:}			
             | Parameters : par Resul : res 
             	{:
@@ -265,12 +265,12 @@ Signature ::= Parameters : par
 						RESULT = new Signature(par.fst	, fp, res.fst);
 					}else{			
 							System.out.println("FormalParameter: "+ par.fst.get(0).name);							
-            				RESULT = new Signature(par.fst, null, res.fst);	
+            				RESULT = new Signature(par.fst	, null, res.fst);	
 					}
             	:}
 			;
 	            
-Resul ::= Parameters : par 
+Resul ::= Parameters : par // ok
 		{: RESULT = par; :}
 	    | Type : type
 	    {: List<FormalParameter> p = new LinkedList<>();
@@ -278,7 +278,7 @@ Resul ::= Parameters : par
 			RESULT = new Pair<>(p,null); :}
 	     ;
     
-Parameters ::= LPAR RPAR {: RESULT = new Pair<>(null,new Pair(null,null)); :}  
+Parameters ::= LPAR RPAR {: RESULT = new Pair<>(null,new Pair(null,null)); :}  // ok
 			 | LPAR ParameterList : parList RPAR {: RESULT = parList; :}
 			 | LPAR TypeList : typeList RPAR  
 			 	{: List<FormalParameter> p = new LinkedList<>();
@@ -287,7 +287,7 @@ Parameters ::= LPAR RPAR {: RESULT = new Pair<>(null,new Pair(null,null)); :}
 					RESULT = new Pair<>(p,null); 
 				:} ;
 
-ParameterList ::= ParameterDeclList : parDec 
+ParameterList ::= ParameterDeclList : parDec // ok
 					{: RESULT = parDec; 
 					:}
 				| ID:nm DOTDOTDOT Type :type 
@@ -299,11 +299,11 @@ ParameterList ::= ParameterDeclList : parDec
 				:}
 				;
 
-ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList : parDecList
+ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList : parDecList //  ok 
 				   {: 
 						List<FormalParameter> p = new LinkedList<>();						
-						for(IdExpression s : lname)
-							p.add(new FormalParameter(s.name,type));						
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));						
 						parDecList.fst.addAll(0,p);						
 						RESULT = parDecList;
 				   :}
@@ -311,24 +311,24 @@ ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList
 				   | IdentifierList: lname Type : type COMMA
 				   {: 
 						List<FormalParameter> p = new LinkedList<>();
-						for(IdExpression s : lname)
-							p.add(new FormalParameter(s.name,type));
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
 						RESULT = new Pair<>(p, null);
 				   :}	
 				   			  
 				   | IdentifierList : lname Type : type
 				   {: 
 						List<FormalParameter> p = new LinkedList<>();
-						for(IdExpression s : lname)
-							p.add(new FormalParameter(s.name,type));
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
 						RESULT = new Pair<>(p, null);
 				   :}	
 				   
 				   | IdentifierList : lname Type : type COMMA ID : id DOTDOTDOT Type : tp COMMA
 				    {: 
 						List<FormalParameter> p = new LinkedList<>();
-						for(IdExpression s : lname)
-							p.add(new FormalParameter(s.name,type));
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
 						
 						RESULT = new Pair<>(p, new Pair<>(id, tp));
 				   :}	
@@ -336,13 +336,13 @@ ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList
 				   | IdentifierList : lname Type : type COMMA ID : id DOTDOTDOT Type : tp 
 				    {: 
 						List<FormalParameter> p = new LinkedList<>();
-						for(IdExpression s : lname)
-							p.add(new FormalParameter(s.name,type));
+						for(String s : lname)
+							p.add(new FormalParameter(s,type));
 						RESULT = new Pair<>(p, new Pair<>(id, tp));
 				   :}
 				   ;
 
-TypeList ::=  Types : types  
+TypeList ::=  Types : types  // ok
 			 {:RESULT = types; :}
 			| DOTDOTDOT Type: type COMMA
 			{:	List<Type> tp = new LinkedList<>();
@@ -356,7 +356,7 @@ TypeList ::=  Types : types
 			:}			
 		;
 
-Types ::=  ID COMMA Types : types 
+Types ::=  ID COMMA Types : types // ok
 			{:RESULT = types; :}
 		 | ID COMMA DOTDOTDOT Type : type COMMA
 		 {:	List<Type> tp = new LinkedList<>();
@@ -398,52 +398,52 @@ Types ::=  ID COMMA Types : types
 		 :}
          ;
 
-IdentifierList ::= ID:nm COMMA IdentifierList  : ids  
-				{: ids.add(0, new IdExpression(nm));
+IdentifierList ::= ID:nm COMMA IdentifierList  : ids  // ok
+				{: ids.add(0,nm);
 					RESULT = ids;
 				:}
-				 | ID :id 
-				 {: List<IdExpression> ids = new LinkedList<>();
-					ids.add(new IdExpression(id));				
-					RESULT = ids; 
-		 		 :} ;
- 
-ConstDecl ::=  CONST IdentifierList : ids 
+				 | ID : nm
+				 {:							
+					List<String> name = new LinkedList<>();
+					name.add(nm);											
+					RESULT = name;
+				 :}
+				  ;
+
+ConstDecl ::=  CONST IdentifierList : ids // Professor que fez  --- ok
 			{: List<ConstDecl> constDecls = new LinkedList<>(); 
-			   for (IdExpression id: ids)
-					constDecls.add(new ConstDecl(id.name, null, null));
+			   for (String id: ids)
+					constDecls.add(new ConstDecl(id, null, null));
 				RESULT = constDecls;
 			:}
-			 | CONST IdentifierList : ids ASSIGN ExpressionList : exps  
+			 | CONST IdentifierList : ids ASSIGN ExpressionList : exps  // eu
 			 {:
-				ErrorRegister ErrReg = new ErrorRegister();
+				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
-				Iterator<IdExpression> idIt = ids.iterator();
+				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();
 				while ( idIt.hasNext() && expIt.hasNext() )
-					constDecls.add( new ConstDecl(idIt.next().name, null, expIt.next()));
+					constDecls.add( new ConstDecl(idIt.next(), null, expIt.next()));
 				if (idIt.hasNext() || expIt.hasNext())
-					 ErrReg.report("Erro na declaração de constantes");
-				ErrReg.mostrar();
+					 ERRO.report("erro na declaração de constantes");
 			    RESULT = constDecls;
 			 :}
-			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps 
+			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps // eu
 			 {:
-				ErrorRegister ErrReg = new ErrorRegister();
+				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
-				Iterator<IdExpression> idIt = ids.iterator();				
+				Iterator<String> idIt = ids.iterator();				
 				Iterator<Expression> expIt = exps.iterator();
 				while ( idIt.hasNext() && expIt.hasNext() )
-					constDecls.add( new ConstDecl(idIt.next().name, type, expIt.next()));
+					constDecls.add( new ConstDecl(idIt.next(), type, expIt.next()));
 				if (idIt.hasNext() || expIt.hasNext())
-					ErrReg.report("Erro na declaração de constantes");
-				ErrReg.mostrar();
+					ERRO.report("erro na declaração de constantes");
 			    RESULT = constDecls;
 			 :}
-			 ;  
+			 ;
 
 
-ExpressionList ::= ExpressionList : exps COMMA Expression : exp   
+ExpressionList ::= ExpressionList : exps COMMA Expression : exp   // ok
 				 {: exps.add(exp);
 					RESULT = exps;
 				 :}
@@ -452,31 +452,34 @@ ExpressionList ::= ExpressionList : exps COMMA Expression : exp
 					List<Expression> ex = new LinkedList<>();
 					ex.add(exp);
 					RESULT = ex;
-				 :} ;
+				 :}
+				 ;
 
-Expression ::= Expression : exp1 PLUS Expression : exp2  
+Expression ::= Expression : exp1 PLUS Expression : exp2  // ok
 				{:	RESULT = new BinaryExpression(BinaryOperator.PLUS,exp1,exp2); :}
 			 | Expression : exp1 MINUS Expression : exp2
-			 	{:	RESULT = new BinaryExpression(BinaryOperator.MINUS,exp1,exp2); :}
+			 {:	RESULT = new BinaryExpression(BinaryOperator.MINUS,exp1,exp2); :}
 			 | Expression : exp1 MULT Expression : exp2
-				{:	RESULT = new BinaryExpression(BinaryOperator.MULT,exp1,exp2); :}
+			 {:	RESULT = new BinaryExpression(BinaryOperator.MULT,exp1,exp2); :}
 			 | Expression : exp1 DIV Expression : exp2
-			 	{:	RESULT = new BinaryExpression(BinaryOperator.DIV,exp1,exp2); :}
+			 {:	RESULT = new BinaryExpression(BinaryOperator.DIV,exp1,exp2); :}
 			 | Expression : exp1 LT Expression : exp2
-				{:	RESULT = new BinaryExpression(BinaryOperator.LT,exp1,exp2); :}
+			 {:	RESULT = new BinaryExpression(BinaryOperator.LT,exp1,exp2); :}
 			 | Expression : exp1 EQ  Expression : exp2
-			 	{:	RESULT = new BinaryExpression(BinaryOperator.EQ,exp1,exp2); :}
+			 {:	RESULT = new BinaryExpression(BinaryOperator.EQ,exp1,exp2); :}
 			 | Expression : exp1 AND Expression : exp2 
-			 	{:	RESULT = new BinaryExpression(BinaryOperator.AND,exp1,exp2); :}
+			 {:	RESULT = new BinaryExpression(BinaryOperator.AND,exp1,exp2); :}
 			 | UnaryExpr : uexp
-			 	{:RESULT = uexp; :} ;
+			 	{:RESULT = uexp; :}
+			  ;			 
 
-UnaryExpr ::= PrimaryExpr : pExp  
+UnaryExpr ::= PrimaryExpr : pExp  // ok
 				{: RESULT =  pExp; // new UnaryExpression(null,pexp); :}
 			| unary_op :uop UnaryExpr: uexp
 			{:
 				RESULT = new UnaryExpression(uop, uexp);	
-			:} ;
+			:}
+			 ;
 
 unary_op ::= PLUS {: RESULT = UnaryOperator.PLUS; :} | MINUS {: RESULT = UnaryOperator.MINUS; :} | MULT {: RESULT = UnaryOperator.MULT; :} | NOT {: RESULT = UnaryOperator.NOT; :} ;
 
@@ -514,8 +517,8 @@ PrimaryExpr ::= Operand : op {: RESULT = op; :}
 						RESULT = new CallExpression(exp,arg.fst,null);			  		
 					:}
 			  
-			  | PrimaryExpr : exp LPAR RPAR {: RESULT = exp; :} ;
- 
+			  | PrimaryExpr : exp LPAR RPAR {: RESULT = exp; :};
+
 Slice ::=  Expression : exp1  COLON  Expression : exp2
 		 {: RESULT = new SliceExpression(null,exp1,exp2); :} 
 	     | Expression : exp1 COLON
@@ -533,33 +536,44 @@ Arguments ::= ExpressionList:exps VariadicCommaOp: variadic
 				{:					
 					RESULT = new Pair<>(exps,variadic);;
 				:};
+				
+/*
+			| TypeLit1 COMMA ExpressionList VariadicCommaOp // with Type is Ambbiguous
+			| TypeLit1 VariadicCommaOp
+			| MULT Type COMMA ExpressionList VariadicCommaOp // with Type is Ambbiguous
+			| MULT Type VariadicCommaOp; //with Type is ambiguous
+//btw, Type is correct here? The documentation says nothing about this. */
+/**** TIRAMOS Type como primeiro argumento ***********/
 
 VariadicCommaOp ::= DOTDOTDOT {:RESULT = true;:}
-		 | COMMA {:RESULT = false;:}
-		 | DOTDOTDOT COMMA {:RESULT = true;:}
-		 | {:RESULT = false;:};
+	 | COMMA {:RESULT = false;:}
+	 | DOTDOTDOT COMMA {:RESULT = true;:}
+	 | {:RESULT = false;:};
 
-Operand ::= INT_NUMBER : i {: RESULT = new IntLiteral(i); :}
-		  | FLOAT_NUMBER : f {: RESULT = new FloatLiteral(f); :}
+Operand ::= INT_NUMBER : inte {: RESULT = new IntLiteral(inte); :}
+		  | FLOAT_NUMBER : floa {: RESULT = new FloatLiteral(floa); :}
 		  | TRUE : v  {: RESULT = new BooleanLiteral(v); :}
 		  | FALSE : f  {: RESULT = new BooleanLiteral(f); :}
 		  | CompositeLit :  comp {: RESULT = comp; :}
 		  | FUNC Function : func {: RESULT = new FunctionLiteral(func.sig, func.body); :}
 		  //| MethodExpr
-		  | LPAR Expression : exp RPAR {: RESULT = exp; :} ;
+		  | LPAR Expression : exp RPAR {: RESULT = exp; :} 
+		  
+		  ;
 
 CompositeLit ::= LiteralType : Ltype LiteralValue : Lvalue
 				{: 					
 					RESULT = new CompositeLit(Ltype, Lvalue.keyedElems); 
 				:}
-				; 
+				;
 
 LiteralType ::= StructType : struct {: RESULT = struct; :}
 			  | ArrayType : array {: RESULT = array; :}
 			  | LSBRACK DOTDOTDOT RSBRACK Type : type {: RESULT = type; :}
-			  | SliceType : slice {: RESULT = slice; :} ;
+			  | SliceType : slice {: RESULT = slice; :}
+			   ;
 			  
-LiteralValue ::= LBRACK RBRACK {: RESULT = new LiteralElement(null); :}
+LiteralValue ::= LBRACK RBRACK {: RESULT = new LiteralElement(null); :} // Rever se é do tipo LiteralElement ou Lista de KeyElement
 			   | LBRACK ElementList : elemsLit RBRACK 
 			   	{: RESULT = new LiteralElement(elemsLit); :}
 			   ;
@@ -575,17 +589,17 @@ ElementList ::= KeyedElement : keyed COMMA ElementList : listElem
 			  {: List<KeyedElement> listElem = new LinkedList<>();
 				 listElem.add(keyed);
 				 RESULT = listElem;  :} ;
+
 			  
 KeyedElement ::=  Element : elm
 				{: RESULT = new KeyedElement(null, elm); :}
 			 	| Element : elm1 COLON Element : elm2
-			 	{: ErrorRegister ErrReg = new ErrorRegister();
+			 	{: ErrorRegister ERRO = new ErrorRegister();;
 					if(elm1 instanceof ExpressionElement){
 						ExpressionElement expElem = (ExpressionElement) elm1;
 						RESULT = new KeyedElement(expElem.exp, elm2);
 					}else{
-						ErrReg.report("Erro key Element");		
-						ErrReg.mostrar();				
+						ERRO.report("Erro key Element");						
 						RESULT = new KeyedElement(null, elm2);
 					} :}
 			 	 ;
@@ -603,39 +617,36 @@ ReceiverType ::= ID : name {: RESULT = new TypeName(name); :}
 			   | LPAR ReceiverType : receiver RPAR 
 			   {: RESULT = receiver; :};
 
-VarDecl ::= VAR VarSpec : varDecl
+VarDecl ::= VAR VarSpec : varDecl // eu que fiz
 			{:							
 				RESULT = varDecl; 
 			:}  
-		  | VAR  LPAR VarSpecList  : varDecls RPAR  
+		  | VAR  LPAR VarSpecList  : varDecls RPAR // eu que fiz
 		    {:			
 				RESULT = varDecls; 
 			:} 
-		  | VarSpec : varDecl
-			{:							
-				RESULT = varDecl; 
-			:}  
 		    ;
 		  
-VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON 
+VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON // professor que fez
 				{: varDecls1.addAll(varDecls2); 
 				   RESULT = varDecls1; :}  
 			  | {: RESULT = new LinkedList<>(); :} 
 			  ; 
 
-VarSpec ::= IdentifierList : ids Type : type 
+VarSpec ::= IdentifierList : ids Type : type // professor que fez
 			{: List<VarDecl> varDecls = new LinkedList<>(); 
-			   for (IdExpression id: ids)
-					varDecls.add(new VarDecl(id.name, type, null));
+			   for (String id: ids)
+					varDecls.add(new VarDecl(id, type, null));
 			   RESULT = varDecls;
 			:}
 		  | IdentifierList : ids ASSIGN ExpressionList : exps
 		  {:
 		  		List<VarDecl> varSpec = new LinkedList<>();
-				Iterator<IdExpression> idIt = ids.iterator();
+				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();
 				while(idIt.hasNext() && expIt.hasNext())					
-					varSpec.add(new VarDecl(idIt.next().name,null,expIt.next()));
+					varSpec.add(new VarDecl(idIt.next(),null,expIt.next()));
+				
 				
 				if(idIt.hasNext() || expIt.hasNext())
 					System.out.println("ERRO  de Atribuição");
@@ -645,12 +656,13 @@ VarSpec ::= IdentifierList : ids Type : type
 		  | IdentifierList :ids Type : type ASSIGN ExpressionList : exps 
 		  {:
 		  		List<VarDecl> varSpec = new LinkedList<>();
-				Iterator<IdExpression> idIt = ids.iterator();
+				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();	
 							
 				while(idIt.hasNext() && expIt.hasNext())						
-					varSpec.add(new VarDecl(idIt.next().name,type,expIt.next()));	
+					varSpec.add(new VarDecl(idIt.next(),type,expIt.next()));	
 							
+				
 				if(idIt.hasNext() || expIt.hasNext())
 					System.out.println("ERRO  de Atribuição");
 				RESULT = varSpec;
@@ -672,9 +684,17 @@ StatementList ::= Statement : state SEMICOLON StatementList : stateList
 					RESULT = stateList; :}
 				| {: RESULT = new LinkedList<>(); :} ;
 
+MethodDecl ::= FUNC LPAR ID:id ReceiverType: type RPAR ID:nm Function: function 
+				{:
+					FormalParameter fp = new FormalParameter(id,type);
+					RESULT = new MethodDecl(fp, nm, function.sig, function.body);
+				:}
+				; 
+
 Statement ::= Declaration : dec
 				{: 
-					RESULT = new DeclarationStm(dec.get(0));
+					for( Declaration d : dec)
+						RESULT = new DeclarationStm(d);
 				:}
 			| SimpleStmt : simpleStm {: RESULT = simpleStm; :}
 			| RETURN  {: RESULT = new ReturnStmt(null); :}
@@ -685,9 +705,9 @@ Statement ::= Declaration : dec
 
 SimpleStmt ::= Expression : exp
 				{: RESULT = new ExpressionStmt(exp); :}
-			/*// Se desejarem adicionar incrementos
-		     | Expression PLUSPLUS
-			 | Expression MINUSMINUS  */
+			// Se desejarem adicionar incrementos
+		     | Expression: exp PLUS PLUS {: RESULT = new ExpressionStmt(exp); :}
+			 | Expression: exp MINUS MINUS  {: RESULT = new ExpressionStmt(exp); :}
 			 | ExpressionList : exps1 ASSIGN ExpressionList : exps2
 			 {:
 			 	RESULT = new Assignment(exps1,exps2);
@@ -706,13 +726,6 @@ SimpleStmt ::= Expression : exp
 			 :} 
 			 | {:RESULT = new  EmptyStmt(); :}; //EmptyStmt
 
-MethodDecl ::= FUNC LPAR ID:id ReceiverType: type RPAR ID:nm Function: function 
-				{:
-					FormalParameter fp = new FormalParameter(id,type);
-					RESULT = new MethodDecl(fp, nm, function.sig, function.body);
-				:}
-				; 
-				
 IfStmt ::= IF SimpleStmt : stm SEMICOLON Expression : exp Block: block ElseOpt : elseOpt 
 			{:
 				if(elseOpt == null)				
@@ -747,7 +760,6 @@ ForStmt ::= FOR Expression : exp Block : body
 			{:
 				RESULT = new ForStmt(null, exp, null, body);
 			:}
-			
 		  | FOR SimpleStmt:stm1 SEMICOLON SimpleStmt : stm2 SEMICOLON SimpleStmt :stm3 Block : body
 		  {:
 			// verificar se é stm2 é uma expressao;
@@ -775,4 +787,19 @@ ForStmt ::= FOR Expression : exp Block : body
 				ShortVarDecl svd = new ShortVarDecl(null, expList);
 				RESULT = new ForRange(svd, exp,body);
 		  :}
-		  ;	
+		  ;		   
+			// ForStmt(Statement initStmt, Expression exp, Statement postStmt, Block body)
+
+
+// ~~ CUP-ECLIPSE:CONFLICT-RES-RR ~~ 
+ // After this the order of productions matters
+
+//Separated and moved by CUP Eclipse plugin
+Operand ::=  ID : id {: RESULT = new IdExpression(id); :};
+
+//Separated and moved by CUP Eclipse plugin
+
+LiteralType ::=  ID : type {: RESULT = new TypeName(type); :};
+
+
+

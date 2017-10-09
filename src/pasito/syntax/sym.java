@@ -15,24 +15,25 @@ public interface sym {
   public static final int INTERFACE = 5;
   public static final int FOR = 15;
   public static final int MINUS = 27;
-  public static final int SEMICOLON = 43;
+  public static final int SEMICOLON = 44;
   public static final int NOT = 33;
   public static final int AND = 30;
   public static final int RANGE = 17;
   public static final int LT = 32;
-  public static final int RPAR = 35;
+  public static final int RPAR = 36;
   public static final int TYPE = 9;
-  public static final int COMMA = 42;
+  public static final int COMMA = 43;
   public static final int DIV = 29;
   public static final int FLOAT_NUMBER = 25;
   public static final int DIGIT = 23;
   public static final int PLUS = 26;
-  public static final int ASSIGN = 40;
-  public static final int LSBRACK = 36;
+  public static final int ASSIGN = 41;
+  public static final int LSBRACK = 37;
   public static final int IF = 12;
-  public static final int DOT = 46;
+  public static final int DOT = 47;
   public static final int ID = 2;
-  public static final int RSBRACK = 37;
+  public static final int RSBRACK = 38;
+  public static final int EXCL = 34;
   public static final int EOF = 0;
   public static final int BOOLEAN = 18;
   public static final int RETURN = 16;
@@ -40,17 +41,17 @@ public interface sym {
   public static final int error = 1;
   public static final int FLOAT64 = 22;
   public static final int EQ = 31;
-  public static final int DASSIGN = 41;
-  public static final int LBRACK = 38;
+  public static final int DASSIGN = 42;
+  public static final int LBRACK = 39;
   public static final int SWITCH = 11;
-  public static final int COLON = 45;
+  public static final int COLON = 46;
   public static final int ELSE = 10;
   public static final int FUNC = 4;
-  public static final int RBRACK = 39;
-  public static final int DOTDOTDOT = 44;
+  public static final int RBRACK = 40;
+  public static final int DOTDOTDOT = 45;
   public static final int DEFAULT = 3;
   public static final int INT_NUMBER = 24;
-  public static final int LPAR = 34;
+  public static final int LPAR = 35;
   public static final int FALSE = 20;
   public static final int STRUCT = 8;
   public static final int VAR = 14;
@@ -90,6 +91,7 @@ public interface sym {
   "EQ",
   "LT",
   "NOT",
+  "EXCL",
   "LPAR",
   "RPAR",
   "LSBRACK",
