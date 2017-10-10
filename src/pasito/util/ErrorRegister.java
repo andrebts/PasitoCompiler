@@ -7,10 +7,12 @@ public class ErrorRegister {
 	 
 	public static void report(String mensagem) {
         e.add(new Erro(mensagem));
+        System.out.println(mensagem);
 	}
 	
 	public static void report(int codigo, String mensagem) {
         e.add(new Erro(codigo, mensagem));	
+        System.out.println(mensagem);
 	}
 	
 	public void mostrar() {

@@ -116,30 +116,33 @@ public class PrettyPrint implements PasitoVisitor {
 	public Object VisitSignature(Signature signature) {
 		StringBuilder result = new StringBuilder();
 		
-		result.append('(');
-		if (signature.inPars != null){
-			for (FormalParameter parameter : signature.inPars) {
-				result.append(parameter.accept(this));
-				result.append(", ");
+		if (signature.inPars != null || signature.variadicPar.name != null) {
+			result.append('(');
+			if (signature.inPars != null){
+				for (FormalParameter parameter : signature.inPars) {
+					result.append(parameter.accept(this));
+					result.append(", ");
+				}
+				result.replace(result.length() -2, result.length(), "");
 			}
-			result.replace(result.length() -2, result.length(), "");
-		}
 
-		if (signature.variadicPar != null || signature.variadicPar != null) {
-			result.append(", ");
-			result.append(signature.variadicPar.accept(this));
+			if (signature.variadicPar != null) {
+				result.append(", ");
+				result.append(signature.variadicPar.accept(this));
+			}
+			result.append(')');
 		}
-		result.append(')');
-
-		result.append(" (");
 		if (signature.outPars != null){
+			result.append(" (");
+
 			for (FormalParameter parameter : signature.outPars) {
 				result.append(parameter.accept(this));
 				result.append(", ");
 			}
 			result.replace(result.length() -2, result.length(), "");
+			
+			result.append(')');
 		}
-		result.append(')');
 		
 		return result.toString();
 	}

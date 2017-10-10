@@ -1297,9 +1297,14 @@ class CUP$Parser$actions {
 		Pair<List<FormalParameter>,Pair<String,Type>> par = (Pair<List<FormalParameter>,Pair<String,Type>>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		//@@CUPDBG37
 
-					FormalParameter fp = new FormalParameter(par.snd.fst,par.snd.snd);									
-					RESULT = new Signature(par.fst,fp, null);				
-
+						FormalParameter fp;					
+						if(par.snd != null){
+							fp = new FormalParameter(par.snd.fst,par.snd.snd);						
+							RESULT = new Signature(par.fst, fp, null);
+					} else{			
+						System.out.println("FormalParameter: "+ par.fst.get(0).name);							
+            			RESULT = new Signature(par.fst, null, null);	
+					}
 				
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Signature",18, ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);
             }
@@ -1320,10 +1325,10 @@ class CUP$Parser$actions {
 					FormalParameter fp;					
 					if(par.snd != null){
 						fp = new FormalParameter(par.snd.fst,par.snd.snd);						
-						RESULT = new Signature(par.fst	, fp, res.fst);
+						RESULT = new Signature(par.fst, fp, res.fst);
 					}else{			
 							System.out.println("FormalParameter: "+ par.fst.get(0).name);							
-            				RESULT = new Signature(par.fst	, null, res.fst);	
+            				RESULT = new Signature(par.fst, null, res.fst);	
 					}
             	
               CUP$Parser$result = parser.getSymbolFactory().newSymbol("Signature",18, ((java_cup.runtime.Symbol)CUP$Parser$stack.elementAt(CUP$Parser$top-1)), ((java_cup.runtime.Symbol)CUP$Parser$stack.peek()), RESULT);

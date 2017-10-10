@@ -1,14 +1,1 @@
-func calcPi(sum int)(x, y int) {
-	const pi = 1.14 + 2;
-	var e float = 2 + 0.71828;
-};
-
-func s() {
-	for i = 0; i < 10; i++ {
-		if i < 4 {
-			calcPi(i);
-			i = 3
-			x = 2
-		}
-	}
-};
+const pi = 3.14;

@@ -110,14 +110,12 @@ public class Main {
             if (analyser.erros.e.size() > 0) {
     	        System.out.println("Erros da checagem de Tipos:");    
                 analyser.erros.mostrar();
-			} else
-    	        System.out.println("Nenhum erro no Analyser.");    
+			}  
             
             PrettyPrint printer = new PrettyPrint(result);
             if (printer.erros.e.size() > 0) {
     	        System.out.println("Erros do Printer:");    
         		printer.erros.mostrar();
-            } else
-    	        System.out.println("Nenhum erro no Printer.");    
+            }
 	}
 }
