@@ -5,6 +5,7 @@ import pasito.ast.Program;
 import pasito.ast.declaration.VarDecl;
 import pasito.ast.expression.BinaryExpression;
 import pasito.ast.expression.BinaryOperator;
+import pasito.ast.expression.Expression;
 import pasito.ast.expression.IdExpression;
 import pasito.ast.expression.IntLiteral;
 import pasito.ast.signature.FormalParameter;
@@ -38,12 +39,20 @@ public class Test {
         List<Statement> stmts = new LinkedList<>();
         BinaryExpression op1 = new BinaryExpression(BinaryOperator.MULT, new IdExpression("sum"), new IntLiteral(4));
         BinaryExpression op2 = new BinaryExpression(BinaryOperator.DIV, op1, new IntLiteral(9));
-        VarDecl vdecl = new VarDecl("x", null, op2);
+        LinkedList<String> ids = new LinkedList<String>();
+        ids.add("x");
+        LinkedList<Expression> exps = new LinkedList<Expression>();
+        exps.add(op2);
+        VarDecl vdecl = new VarDecl(ids, null, exps);
         DeclarationStm declarationStm = new DeclarationStm(vdecl);
         stmts.add(declarationStm);
         
         BinaryExpression op3 = new BinaryExpression(BinaryOperator.MINUS, new IdExpression("sum"), new IdExpression("x"));
-        VarDecl vdecl2 = new VarDecl("y", null, op3);
+        ids = new LinkedList<String>();
+        ids.add("y");
+        exps = new LinkedList<Expression>();
+        exps.add(op3);
+        VarDecl vdecl2 = new VarDecl(ids, null, exps);
         DeclarationStm declarationStm2 = new DeclarationStm(vdecl2);
         stmts.add(declarationStm2);
 

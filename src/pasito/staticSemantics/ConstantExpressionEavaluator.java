@@ -383,4 +383,10 @@ public class ConstantExpressionEavaluator implements PasitoVisitor {
 		return null;
 	}
 
+	@Override
+	public Object IncrStmt(pasito.ast.statement.IncrStmt incrStmt) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

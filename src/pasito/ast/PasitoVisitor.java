@@ -90,4 +90,6 @@ public interface PasitoVisitor {
     /* Operators */
     Object VisitBinaryOperator(BinaryOperator binaryOperator);
     Object VisitUnaryOperator(UnaryOperator unaryOperator);
+
+	Object IncrStmt(IncrStmt incrStmt);
 }

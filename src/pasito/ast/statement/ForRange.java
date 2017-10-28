@@ -10,21 +10,15 @@ import pasito.ast.expression.Expression;
  */
 public class ForRange extends Statement {
 
-    public Statement initStmt;
+    public List<Expression> exp;
     public Expression rangExp;
     public Block body;
 
-    public ForRange(Statement initStmt, Expression rangExp, Block body) {
-        this.initStmt = initStmt;
+    public ForRange(List<Expression> exp, Expression rangExp, Block body) {
+        this.exp = exp;
         this.rangExp = rangExp;
         this.body = body;
     }
-    
-    /*public ForRange(List<Expression> initStmt, Expression rangExp, Block body) {
-        this.initStmt = initStmt;
-        this.rangExp = rangExp;
-        this.body = body;
-    }*/
 
     @Override
     public Object accept(PasitoVisitor visitor) {

@@ -190,12 +190,12 @@ public class Analyser implements PasitoVisitor {
 	
 	@Override
 	public Object VisitVarDecl(VarDecl varDecl) { 
-		Type ty = (Type) varDecl.exp.accept(this);
+		/*Type ty = (Type) varDecl.exp.accept(this);
 		try {
 			env.put(varDecl.name, new Var(ty));
 		} catch (AlreadyBoundException e) {
 			ErrorRegister.report(varDecl.name + " Variável ja foi declarada!");
-		}
+		}*/
 		return null;
 	}
 
@@ -481,6 +481,12 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitBoolLiteral(BooleanLiteral boolLiteral) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Object IncrStmt(pasito.ast.statement.IncrStmt incrStmt) {
 		// TODO Auto-generated method stub
 		return null;
 	}

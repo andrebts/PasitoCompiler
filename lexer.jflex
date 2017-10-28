@@ -1,6 +1,6 @@
 package pasito.syntax;
-import java_cup.runtime.ComplexSymbolFactory;
 import java_cup.runtime.ComplexSymbolFactory.Location;
+import java_cup.runtime.ComplexSymbolFactory;
 import java_cup.runtime.Symbol;
 import java.lang.*;
 import java.io.InputStreamReader;
@@ -115,7 +115,7 @@ import java.util.regex.Pattern;
 InputCharacter = [^\r\n]
 LineTerminator = [\n|\r|\r\n] // fim de linha
 WhiteSpace 	   = {LineTerminator}|[\t|\f| ] // espaço em branco
-Number = [0-9]+ //era = Digit
+Number 		   = [0-9]+ 
 
 GeralComment   = "/*"([^*]|\*+[^*/])*\*+"/"
 LinhaComment   = "//" {InputCharacter}* {LineTerminator}? //Podem tbm estar no fim do arquivo sem LineTerminator
@@ -151,7 +151,7 @@ Div 		   = "/"
 /* Operadores lógicos */
 And 		   = "&&" // operador lógico And
 Not	   		   = "!"
-Eq 		   	   = "​=="
+Eq 		   	   = "=="
 Lpar  		   = "("
 Rpar 		   = ")"
 Lt 	   		   = "<"
@@ -203,13 +203,15 @@ False 		   = "false" // palavra reservada False
 <YYINITIAL> {
 	{LineTerminator}			 { 	String num = "[-]?\\d*[.]?\\d+";
     								String id = "\\b[_a-zA-Z][_a-zA-Z0-9]*\\b";
-    								if (Pattern.matches(num, tok )){ return symbol("SEMICOLON",SEMICOLON);}
-    								if (Pattern.matches(id, tok )){ return symbol("SEMICOLON",SEMICOLON);}
-    								if (tok.equals("return")){ return symbol("SEMICOLON",SEMICOLON);}
-    								if (tok.equals("}")){ return symbol("SEMICOLON",SEMICOLON);}
-    								if (tok.equals("]")){ return symbol("SEMICOLON",SEMICOLON);}
-    								if (tok.equals(")")){ return symbol("SEMICOLON",SEMICOLON);}
-    								if (tok.equals("fallthrough")){ return symbol("SEMICOLON",SEMICOLON);}							
+    								if (tok != null) {
+	    								if (Pattern.matches(num, tok )){ return symbol("SEMICOLON",SEMICOLON);}
+	    								if (Pattern.matches(id, tok )){ return symbol("SEMICOLON",SEMICOLON);}
+	    								if (tok.equals("return")){ return symbol("SEMICOLON",SEMICOLON);}
+	    								if (tok.equals("}")){ return symbol("SEMICOLON",SEMICOLON);}
+	    								if (tok.equals("]")){ return symbol("SEMICOLON",SEMICOLON);}
+	    								if (tok.equals(")")){ return symbol("SEMICOLON",SEMICOLON);}
+	    								if (tok.equals("fallthrough")){ return symbol("SEMICOLON",SEMICOLON);}
+    								}							
     							 } 
     							
     {Ignore}                     { }
@@ -217,8 +219,8 @@ False 		   = "false" // palavra reservada False
     {True} 						 { return symbol("TRUE", TRUE, true); }
     {False} 					 { return symbol("FALSE", FALSE, false); }
      
-    {Octal}						 { return symbol ("OCTAL", DIGIT, (yytext())); }
-	{Hexa}						 { return symbol ("HEXA", DIGIT, (yytext())); }
+    {Octal}						 { return symbol("OCTAL", DIGIT, (yytext())); }
+	{Hexa}						 { return symbol("HEXA", DIGIT, (yytext())); }
 	{Boolean} 				 	 { return symbol("BOOLEAN", BOOLEAN, new Boolean(yytext())); }
 	{Float_number} 				 { return symbol("FLOAT_NUMBER", FLOAT_NUMBER, new Float(yytext())); }
 	{Int_number} 				 { return symbol("INT_NUMBER", INT_NUMBER, new Integer(yytext())); }
@@ -235,16 +237,16 @@ False 		   = "false" // palavra reservada False
 	
     {And}						 { return symbol("AND", AND); }
 	{Not}					 	 { return symbol("NOT", NOT); }
-    {Eq}						 { return symbol("EQ", EQ); }
     {Lpar}				 		 { return symbol("LPAR", LPAR); }
     {Rpar}			 			 { return symbol("RPAR", RPAR); }
-    {Lt}					 	 { return symbol("LT", LT); }
     {Lsbrack}				 	 { return symbol("LSBRACK", LSBRACK); }
     {Rsbrack}				 	 { return symbol("RSBRACK", RSBRACK); }
     {Lbrack}					 { return symbol("LBRACK", LBRACK); }
     {Rbrack}				 	 { return symbol("RBRACK", RBRACK); }
     {Assign}					 { return symbol("ASSIGN", ASSIGN); }
     {Dassign}					 { return symbol("DASSIGN", DASSIGN, yytext()); }
+    {Lt}					 	 { return symbol("LT", LT); }
+	{Eq}						 { return symbol("EQ", EQ); }
 	
     {Dot}			             { return symbol("DOT", DOT); }
     {Colon}		        	     { return symbol("COLON", COLON); }

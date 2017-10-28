@@ -13,6 +13,7 @@ import pasito.util.ErrorRegister;
 import pasito.util.StringUtils;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -116,8 +117,8 @@ public class PrettyPrint implements PasitoVisitor {
 	public Object VisitSignature(Signature signature) {
 		StringBuilder result = new StringBuilder();
 		
+		result.append('(');
 		if (signature.inPars != null || signature.variadicPar.name != null) {
-			result.append('(');
 			if (signature.inPars != null){
 				for (FormalParameter parameter : signature.inPars) {
 					result.append(parameter.accept(this));
@@ -130,8 +131,9 @@ public class PrettyPrint implements PasitoVisitor {
 				result.append(", ");
 				result.append(signature.variadicPar.accept(this));
 			}
-			result.append(')');
 		}
+		result.append(')');
+
 		if (signature.outPars != null){
 			result.append(" (");
 
@@ -163,13 +165,27 @@ public class PrettyPrint implements PasitoVisitor {
 	@Override
 	public Object VisitVarDecl(VarDecl varDecl) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("var " + varDecl.name);
+		sb.append("var ");
+		
+		for (String name: varDecl.names) {
+			sb.append(name + ", ");
+		}
+
+		sb.replace(sb.length() - 2, sb.length(), "");
 		
 		if (varDecl.type != null) 
 			sb.append(" " + varDecl.type.accept(this));
 		
-		sb.append(" = ");
-		sb.append(varDecl.exp.accept(this));
+		if (varDecl.exps != null) {
+			sb.append(" = ");
+			
+			for (Expression e : varDecl.exps) {
+				sb.append(e.accept(this) + ", ");
+			}
+
+			sb.replace(sb.length() - 2, sb.length(), "");
+		}
+		
 		return sb.toString();
 	}
 
@@ -224,11 +240,13 @@ public class PrettyPrint implements PasitoVisitor {
 	public Object VisitStructType(StructType structType) {
 		StringBuilder result = new StringBuilder();
 
-		result.append("struct { ");
+		result.append("struct {\n");
+		indent();
 		for (FieldDecl fieldDecl : structType.fieldDecls) {
-			result.append(fieldDecl.accept(this));
+			result.append(print(fieldDecl.accept(this), true));
 		}
-		result.append("}");
+		result.append(print("\n}", true));
+		unindent();
 
 		return result.toString();
 	}
@@ -253,7 +271,7 @@ public class PrettyPrint implements PasitoVisitor {
 	@Override
 	public Object VisitFieldDecl(FieldDecl fieldDecl) {
 		StringBuilder sb = new StringBuilder();
-		sb.append(fieldDecl.name);
+		sb.append(fieldDecl.name + " ");
 		sb.append(fieldDecl.type.accept(this));
 		return sb.toString();
 	}
@@ -412,7 +430,7 @@ public class PrettyPrint implements PasitoVisitor {
 			result.append(arg.accept(this) + ", ");
 		}
 
-		result.replace(result.length() - 1, result.length(), "");
+		result.replace(result.length() -2, result.length(), "");
 		result.append(")");
 
 		if (callExpression.variadicArg != null) 
@@ -444,7 +462,7 @@ public class PrettyPrint implements PasitoVisitor {
 			result.append(arg.accept(this) + ", ");
 		}
 
-		result.replace(result.length() - 1, result.length(), "");
+		result.replace(result.length() - 2, result.length(), "");
 		result.append("}");
 
 		return result;
@@ -489,8 +507,10 @@ public class PrettyPrint implements PasitoVisitor {
 		int sizeRight = assignment.rightExps.size() - 1;
 
 		// Pega todas as expressÃµes da esquerda
-		for (Expression exp : assignment.leftExps.subList(0, sizeLeft))
-			sb.append((String) exp.accept(this) + ',');
+		for (Expression exp : assignment.leftExps.subList(0, sizeLeft)){
+			sb.append(exp.accept(this) + ",");
+		}
+
 		sb.append(assignment.leftExps.get(sizeLeft).accept(this));
 
 		// adiciona sinal =
@@ -498,7 +518,7 @@ public class PrettyPrint implements PasitoVisitor {
 
 		// Pega todas as expressÃµes da direita
 		for (Expression exp : assignment.rightExps.subList(0, sizeRight))
-			sb.append((String) exp.accept(this) + ',');
+			sb.append(exp.accept(this) + ",");
 		sb.append(assignment.rightExps.get(sizeRight).accept(this));
 
 		return sb.toString();
@@ -506,7 +526,36 @@ public class PrettyPrint implements PasitoVisitor {
 
 	@Override
 	public Object VisitShortVarDecl(ShortVarDecl shortVarDecl) {
-		return null;
+		StringBuilder sb = new StringBuilder();
+		int sizeLeft = -1, sizeRight = -1;
+
+		if (shortVarDecl.names != null) {
+			sizeLeft = shortVarDecl.names.size()-1;
+			sizeRight = shortVarDecl.names.size()-1;
+		}
+		
+		// Pega todas as expressões da esquerda
+		if (sizeLeft >= 0) {
+			for (String name : shortVarDecl.names.subList(0, sizeLeft)) {
+				sb.append(name + ", ");
+			}
+
+			sb.append(shortVarDecl.names.get(sizeLeft));
+		}
+
+		// adiciona sinal :=
+		sb.append(" := ");
+
+		// Pega todas as expressões da direita
+		if (sizeRight >= 0){
+			for (Expression ex : shortVarDecl.exps.subList(0, sizeRight)) {
+				sb.append(ex.accept(this) + ", ");
+			}
+			
+			sb.append(shortVarDecl.exps.get(sizeRight).accept(this));
+		}
+
+		return sb.toString();
 	}
 
 	@Override
@@ -519,12 +568,13 @@ public class PrettyPrint implements PasitoVisitor {
 		for (Statement stm : block.stmts) {
 			if (stm instanceof EmptyStmt)
 				continue;
-			result.append(print(stm.accept(this) + ";", true)); 
+			if (stm != null) 
+				result.append(print(stm.accept(this), true)); 
 			result.append("\n");
 		}
 		
 		unindent();
-		result.append("}");
+		result.append(print("}", true));
 
 		return result.toString();
 	}
@@ -563,13 +613,17 @@ public class PrettyPrint implements PasitoVisitor {
 
 		result.append("for ");
 		
-		if (forStmt.initStmt != null){
-			result.append(forStmt.initStmt.accept(this) + ";");
-			if (forStmt.exp != null) {
-				result.append(forStmt.exp.accept(this) + ";");
-				if (forStmt.postStmt != null)
-					result.append(forStmt.postStmt.accept(this));
-			}
+		if (forStmt.initStmt != null) {
+			result.append(forStmt.initStmt.accept(this) + "; ");
+		
+			if (forStmt.exp != null) 
+				result.append(forStmt.exp.accept(this) + "; ");
+			
+			if (forStmt.postStmt != null)
+				result.append(forStmt.postStmt.accept(this));
+		} else {
+			if (forStmt.exp != null) 
+				result.append(forStmt.exp.accept(this));
 		}
 
 		result.append(forStmt.body.accept(this));
@@ -583,9 +637,15 @@ public class PrettyPrint implements PasitoVisitor {
 
 		result.append("for ");
 		
-		if (forRange.initStmt != null)
-			result.append(forRange.initStmt.accept(this));
-		result.append("range" + forRange.rangExp.accept(this));
+		if (forRange.exp != null) {
+			for (Expression e : forRange.exp) {
+				result.append(e.accept(this));
+				result.append(", ");
+			}
+			result.replace(result.length() -2, result.length(), " ");
+		}
+		
+		result.append(":= range " + forRange.rangExp.accept(this));
 		result.append(forRange.body.accept(this));
 
 		return result.toString();
@@ -595,9 +655,9 @@ public class PrettyPrint implements PasitoVisitor {
 	public Object VisitBinaryOperator(BinaryOperator binaryOperator) {
 		switch (binaryOperator.name()) {
 		case "AND":
-			return print(") AND (", false);
+			return print(" && ", false);
 		case "OR":
-			return print(") OR (", false);
+			return print(" || ", false);
 		case "PLUS":
 			return print(" + ", false);
 		case "MINUS":
@@ -610,6 +670,8 @@ public class PrettyPrint implements PasitoVisitor {
 			return print(" < ", false);
 		case "ASSIGN":
 			return print(" = ", false);
+		case "EQ":
+			return print(" == ", false);
 		default:
 			return null;
 		}
@@ -627,5 +689,16 @@ public class PrettyPrint implements PasitoVisitor {
 		default:
 			return null;
 		}
+	}
+
+	@Override
+	public Object IncrStmt(IncrStmt incrStmt) {
+		StringBuilder result = new StringBuilder();
+		result.append(incrStmt.exp.accept(this));
+		if (incrStmt.up)
+			result.append("++");
+		else
+			result.append("--");
+		return result;
 	}
 }

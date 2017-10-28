@@ -4,7 +4,7 @@ import java.io.FileInputStream;
 import java.util.HashMap;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java_cup.runtime.*;
+import java_cup.runtime.ComplexSymbolFactory;
 import java.io.File;
 import java.util.*;
 
@@ -49,7 +49,7 @@ terminal INT32, FLOAT64, DIGIT;
 terminal Integer INT_NUMBER ;
 terminal Float FLOAT_NUMBER;
 terminal PLUS, MINUS, MULT, DIV, AND, EQ, LT;
-terminal NOT, EXCL;
+terminal NOT;
 terminal LPAR, RPAR, LSBRACK, RSBRACK, LBRACK,
          RBRACK, ASSIGN, DASSIGN, COMMA, SEMICOLON, DOTDOTDOT, COLON, DOT;
 
@@ -71,21 +71,14 @@ non terminal FieldDecl FieldDecl;
 non terminal List<FieldDecl> FieldDeclList;
 non terminal List<MethodSpec> MethodSpecList;
 non terminal MethodSpec MethodSpec;
-non terminal Signature Signature;  //
-non terminal Pair<List <FormalParameter>, Pair<String,Type>> Parameters; 
-non terminal Pair<List <FormalParameter>, Pair<String,Type>> Resul; 
-non terminal Pair<List <FormalParameter>, Pair<String,Type>> ParameterList; 
-non terminal Pair<List <FormalParameter>, Pair<String,Type>> ParameterDeclList; 
-non terminal List <Type> TypeList;
-non terminal List <Type> Types;
+non terminal Signature Signature;  
+non terminal Pair<List<FormalParameter>, Pair<String,Type>> Parameters, Resul, ParameterList, ParameterDeclList; 
+non terminal List <Type> TypeList, Types;
 non terminal List<String> IdentifierList;
 non terminal Expression Expression;
 non terminal List<Expression> ExpressionList;
-non terminal CompExpression; // não usei e não tem a classe e nem a produção
-non terminal AddExpression; // não usei e não tem a classe e nem a produção
-non terminal MultExpression; // não usei e não tem a classe e nem a produção
-non terminal Args; // não usei e não tem a classe e nem a produção
-non terminal MethodExpr; // não usei, a produção foi retirada do projeto
+non terminal CompExpression, AddExpression, MultExpression; 
+non terminal MethodExpr; 
 non terminal Expression UnaryExpr;
 non terminal UnaryOperator unary_op;
 non terminal Expression PrimaryExpr;
@@ -101,7 +94,7 @@ non terminal TypeName ReceiverType;
 non terminal Element Element;
 non terminal List<KeyedElement> ElementList;
 non terminal KeyedElement KeyedElement;
-non terminal List<VarDecl> VarSpec; 
+non terminal VarDecl VarSpec; 
 non terminal List<VarDecl> VarSpecList;
 non terminal Block Block;
 non terminal Statement Statement;
@@ -117,26 +110,26 @@ precedence left LT, EQ;
 precedence left PLUS, MINUS;
 precedence left MULT , DIV;
 
-Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog //ok
+Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog 
              {: prog.declarations.addAll(0,topDecs);
               RESULT = prog; :}
 		  |  {: RESULT = new Program(new LinkedList<>()); :} 
 		    ;
 			
-TopLevelDecl ::=  Declaration  : decl  // ok
+TopLevelDecl ::=  Declaration  : decl  
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();
                     for (Declaration d : decl)
 						tld.add(new Dec(d));
 					RESULT = tld; 
 				:} 
-				| FunctionDecl : func // ok
+				| FunctionDecl : func 
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();                    
 					tld.add(func);
 					RESULT = tld; 
 				:} 				
-				| MethodDecl  : method //ok
+				| MethodDecl  : method 
 				{: 
 					List<TopLevelDecl> tld = new LinkedList<>();                    
 					tld.add(method);
@@ -144,31 +137,27 @@ TopLevelDecl ::=  Declaration  : decl  // ok
 				:} 	
 				;
 
-Declaration ::= ConstDecl  : constDecl	 // ok
+Declaration ::= ConstDecl  : constDecl	 
 			   {: 				
 					List<Declaration> dec = new LinkedList<>();
-					for(ConstDecl c: constDecl)
-						dec.add(c);
-				RESULT = dec;
+					dec.addAll(constDecl);
+					RESULT = dec;
 			  :}		 
 			  | VarDecl : varDecl
 			  {:
 					List<Declaration> dec = new LinkedList<>();	
-					int i = 0;
-					for(VarDecl v: varDecl)
-						dec.add(v);		
+					dec.addAll(varDecl);
 					RESULT = dec;
 			  :}
-			  | TypeDecl : typeDecl  // ok
+			  | TypeDecl : typeDecl  
 			  {:	
 					List<Declaration> dec = new LinkedList<>();
-					for(TypeDecl d: typeDecl)
-						dec.add(d);
+					dec.addAll(typeDecl);
 					RESULT = dec; 					
 			  :}
 			  ;
 
-TypeDecl ::= TYPE ID:nm Type :type  // ok
+TypeDecl ::= TYPE ID:nm Type :type  
 			{: 	
 				List<TypeDecl> td = new LinkedList<>(); 
 				td.add(new TypeDecl(nm, type));						
@@ -181,20 +170,22 @@ TypeDecl ::= TYPE ID:nm Type :type  // ok
 			:} 
            ;
 
-TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs // ok
+TypeSpecList ::=  ID:nm Type : type SEMICOLON TypeSpecList  : tyDecs 
 				{:					
 					tyDecs.add(0, new TypeDecl(nm, type));
 					RESULT = tyDecs;
-					
 				:}
 				| {: RESULT = new LinkedList<>(); :}
 				;
 
-Type ::=  ID : id {: RESULT = new TypeName(id); :} // ok
+Type ::=  ID : id {: RESULT = new TypeName(id); :} 
 		| TypeLit : Tlit
 		{:
 			RESULT = Tlit; 
 		:}
+		| BOOLEAN {: RESULT = new TypeName("bool"); :}
+	    | INT32 {: RESULT = new TypeName("int"); :}
+ 	    | FLOAT64 {: RESULT = new TypeName("float"); :}
 		;
 
 TypeLit ::= ArrayType : array  
@@ -203,55 +194,52 @@ TypeLit ::= ArrayType : array
 		  {: RESULT = struct; :}
 		  | MULT Type : type
 		  {: RESULT = new PointerType(type); :}
-		  | INTERFACE LBRACK MethodSpecList : method RBRACK
+		  | INTERFACE LBRACK MethodSpecList : methods RBRACK
 		   {: 
 				List<MethodSpecOrInterfaceName> met = new LinkedList<>();
-				for(MethodSpec m : method)
-					met.add(m);
-				RESULT = new InterfaceType(met); :}
+				met.addAll(methods);
+				RESULT = new InterfaceType(met); 
+		   :}
 		  | SliceType : slice {: RESULT = slice; :}
-		  | BOOLEAN {: RESULT = new TypeName("bool"); :}
-		  | INT32 {: RESULT = new TypeName("int"); :}
-     	  | FLOAT64 {: RESULT = new TypeName("float"); :}
-		   ;
+		  ;
 
-StructType ::= STRUCT LBRACK FieldDeclList : fieldDec RBRACK // ok
+StructType ::= STRUCT LBRACK FieldDeclList : fieldDec RBRACK 
 			{: RESULT = new StructType(fieldDec); :};
 
-ArrayType ::= LSBRACK Expression: exp RSBRACK Type : type   // ok
+ArrayType ::= LSBRACK Expression: exp RSBRACK Type : type   
 			{:
 				RESULT = new ArrayType(exp, type);
 			:}
 			;
 
-SliceType ::= LSBRACK RSBRACK Type : type  //ok
+SliceType ::= LSBRACK RSBRACK Type : type  
 			{: RESULT = new SliceType(type); :} ;
 
-FieldDeclList ::= FieldDecl : fieldecl SEMICOLON FieldDeclList : fieldeclList  // ok
+FieldDeclList ::= FieldDecl : fieldecl SEMICOLON FieldDeclList : fieldeclList  
 				{: 
 					fieldeclList.add(0,fieldecl);
 					RESULT = fieldeclList;
 				 :}
 				| {: RESULT = new LinkedList<>(); :};
 
-FieldDecl ::=  ID : name Type : type {: RESULT = new FieldDecl(name,type); :}  // ok
+FieldDecl ::=  ID : name Type : type {: RESULT = new FieldDecl(name,type); :}  
 			 | ID : name {: RESULT = new FieldDecl(name,null); :}
 			 | MULT ID: name {: RESULT = new FieldDecl(name,null); :} ;			 
 
-MethodSpecList ::= MethodSpec : method SEMICOLON MethodSpecList : listMethod  // ok
+MethodSpecList ::= MethodSpec : method SEMICOLON MethodSpecList : listMethod  
 				{: 
 					listMethod.add(0,method);				
 					RESULT = listMethod;
 				 :}
 				| {: RESULT = new LinkedList<>(); :};
 
-MethodSpec ::= ID :id Signature : sig  // ok
+MethodSpec ::= ID :id Signature : sig  
 				{: RESULT = new MethodSpec(id,sig); :}
 			 | ID :id
 			 	{: RESULT = new MethodSpec(id,null); :}
 			 ;
 
-Signature ::= Parameters : par  // Veriricar o retorno...
+Signature ::= Parameters : par
 				{:
 						FormalParameter fp;					
 						if(par.snd != null){
@@ -275,7 +263,7 @@ Signature ::= Parameters : par  // Veriricar o retorno...
             	:}
 			;
 	            
-Resul ::= Parameters : par // ok
+Resul ::= Parameters : par 
 		{: RESULT = par; :}
 	    | Type : type
 	    {: List<FormalParameter> p = new LinkedList<>();
@@ -283,7 +271,7 @@ Resul ::= Parameters : par // ok
 			RESULT = new Pair<>(p,null); :}
 	     ;
     
-Parameters ::= LPAR RPAR {: RESULT = new Pair<>(null,new Pair(null,null)); :}  // ok
+Parameters ::= LPAR RPAR {: RESULT = new Pair<>(null,new Pair(null,null)); :}  
 			 | LPAR ParameterList : parList RPAR {: RESULT = parList; :}
 			 | LPAR TypeList : typeList RPAR  
 			 	{: List<FormalParameter> p = new LinkedList<>();
@@ -292,7 +280,7 @@ Parameters ::= LPAR RPAR {: RESULT = new Pair<>(null,new Pair(null,null)); :}  /
 					RESULT = new Pair<>(p,null); 
 				:} ;
 
-ParameterList ::= ParameterDeclList : parDec // ok
+ParameterList ::= ParameterDeclList : parDec 
 					{: RESULT = parDec; 
 					:}
 				| ID:nm DOTDOTDOT Type :type 
@@ -304,7 +292,7 @@ ParameterList ::= ParameterDeclList : parDec // ok
 				:}
 				;
 
-ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList : parDecList //  ok 
+ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList : parDecList  
 				   {: 
 						List<FormalParameter> p = new LinkedList<>();						
 						for(String s : lname)
@@ -347,7 +335,7 @@ ParameterDeclList ::= IdentifierList : lname Type : type COMMA ParameterDeclList
 				   :}
 				   ;
 
-TypeList ::=  Types : types  // ok
+TypeList ::=  Types : types  
 			 {:RESULT = types; :}
 			| DOTDOTDOT Type: type COMMA
 			{:	List<Type> tp = new LinkedList<>();
@@ -361,7 +349,7 @@ TypeList ::=  Types : types  // ok
 			:}			
 		;
 
-Types ::=  ID COMMA Types : types // ok
+Types ::=  ID COMMA Types : types 
 			{:RESULT = types; :}
 		 | ID COMMA DOTDOTDOT Type : type COMMA
 		 {:	List<Type> tp = new LinkedList<>();
@@ -403,7 +391,7 @@ Types ::=  ID COMMA Types : types // ok
 		 :}
          ;
 
-IdentifierList ::= ID:nm COMMA IdentifierList  : ids  // ok
+IdentifierList ::= ID:nm COMMA IdentifierList  : ids  
 				{: ids.add(0,nm);
 					RESULT = ids;
 				:}
@@ -415,13 +403,13 @@ IdentifierList ::= ID:nm COMMA IdentifierList  : ids  // ok
 				 :}
 				  ;
 
-ConstDecl ::=  CONST IdentifierList : ids // Professor que fez  --- ok
+ConstDecl ::=  CONST IdentifierList : ids 
 			{: List<ConstDecl> constDecls = new LinkedList<>(); 
 			   for (String id: ids)
 					constDecls.add(new ConstDecl(id, null, null));
 				RESULT = constDecls;
 			:}
-			 | CONST IdentifierList : ids ASSIGN ExpressionList : exps  // eu
+			 | CONST IdentifierList : ids ASSIGN ExpressionList : exps  
 			 {:
 				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
@@ -433,7 +421,7 @@ ConstDecl ::=  CONST IdentifierList : ids // Professor que fez  --- ok
 					 ERRO.report("erro na declaração de constantes");
 			    RESULT = constDecls;
 			 :}
-			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps // eu
+			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps 
 			 {:
 				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
@@ -448,7 +436,7 @@ ConstDecl ::=  CONST IdentifierList : ids // Professor que fez  --- ok
 			 ;
 
 
-ExpressionList ::= ExpressionList : exps COMMA Expression : exp   // ok
+ExpressionList ::= ExpressionList : exps COMMA Expression : exp   
 				 {: exps.add(exp);
 					RESULT = exps;
 				 :}
@@ -460,7 +448,7 @@ ExpressionList ::= ExpressionList : exps COMMA Expression : exp   // ok
 				 :}
 				 ;
 
-Expression ::= Expression : exp1 PLUS Expression : exp2  // ok
+Expression ::= Expression : exp1 PLUS Expression : exp2  
 				{:	RESULT = new BinaryExpression(BinaryOperator.PLUS,exp1,exp2); :}
 			 | Expression : exp1 MINUS Expression : exp2
 			 {:	RESULT = new BinaryExpression(BinaryOperator.MINUS,exp1,exp2); :}
@@ -478,7 +466,7 @@ Expression ::= Expression : exp1 PLUS Expression : exp2  // ok
 			 	{:RESULT = uexp; :}
 			  ;			 
 
-UnaryExpr ::= PrimaryExpr : pExp  // ok
+UnaryExpr ::= PrimaryExpr : pExp  
 				{: RESULT =  pExp; // new UnaryExpression(null,pexp); :}
 			| unary_op :uop UnaryExpr: uexp
 			{:
@@ -622,55 +610,58 @@ ReceiverType ::= ID : name {: RESULT = new TypeName(name); :}
 			   | LPAR ReceiverType : receiver RPAR 
 			   {: RESULT = receiver; :};
 
-VarDecl ::= VAR VarSpec : varDecl // eu que fiz
-			{:							
-				RESULT = varDecl; 
-			:}  
-		  | VAR  LPAR VarSpecList  : varDecls RPAR // eu que fiz
+VarDecl ::= VAR VarSpec : varDecl
+			{:  
+				LinkedList<VarDecl> decs = new LinkedList<>();
+				decs.add(varDecl);
+				RESULT = decs; 
+			:} 
+		  | VAR  LPAR VarSpecList : varDecls RPAR  
 		    {:			
 				RESULT = varDecls; 
 			:} 
 		    ;
 		  
-VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON // professor que fez
-				{: varDecls1.addAll(varDecls2); 
+VarSpecList ::= VarSpecList : varDecls1 VarSpec : varDecls2 SEMICOLON 
+				{: varDecls1.add(varDecls2); 
 				   RESULT = varDecls1; :}  
 			  | {: RESULT = new LinkedList<>(); :} 
 			  ; 
 
-VarSpec ::= IdentifierList : ids Type : type // professor que fez
-			{: List<VarDecl> varDecls = new LinkedList<>(); 
-			   for (String id: ids)
-					varDecls.add(new VarDecl(id, type, null));
-			   RESULT = varDecls;
+VarSpec ::= IdentifierList : ids Type : type 
+			{: 
+			   RESULT = new VarDecl(ids, type, null);
 			:}
 		  | IdentifierList : ids ASSIGN ExpressionList : exps
 		  {:
-		  		List<VarDecl> varSpec = new LinkedList<>();
+		  		List<String> names = new LinkedList<>();
+		  		List<Expression> expressions = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();
-				while(idIt.hasNext() && expIt.hasNext())					
-					varSpec.add(new VarDecl(idIt.next(),null,expIt.next()));
-				
-				
+				while(idIt.hasNext() && expIt.hasNext()){
+					names.add(idIt.next());
+					expressions.add(expIt.next());
+				}
 				if(idIt.hasNext() || expIt.hasNext())
-					System.out.println("ERRO  de Atribuição");
+					System.out.println("Erro de Atribuição");
 
-				RESULT = varSpec;
+				RESULT = new VarDecl(names, null, expressions);
 		  :}
 		  | IdentifierList :ids Type : type ASSIGN ExpressionList : exps 
 		  {:
-		  		List<VarDecl> varSpec = new LinkedList<>();
+				List<String> names = new LinkedList<>();
+		  		List<Expression> expressions = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();	
 							
-				while(idIt.hasNext() && expIt.hasNext())						
-					varSpec.add(new VarDecl(idIt.next(),type,expIt.next()));	
-							
+				while(idIt.hasNext() && expIt.hasNext()){
+					names.add(idIt.next());
+					expressions.add(expIt.next());
+				}							
 				
 				if(idIt.hasNext() || expIt.hasNext())
 					System.out.println("ERRO  de Atribuição");
-				RESULT = varSpec;
+				RESULT = new VarDecl(names, type, expressions);
 		  :}
 		  ;
 
@@ -711,23 +702,23 @@ Statement ::= Declaration : dec
 SimpleStmt ::= Expression : exp
 				{: RESULT = new ExpressionStmt(exp); :}
 			// Se desejarem adicionar incrementos
-		     | Expression: exp PLUS PLUS {: RESULT = new ExpressionStmt(exp); :}
-			 | Expression: exp MINUS MINUS  {: RESULT = new ExpressionStmt(exp); :}
+		     | Expression: exp PLUS PLUS {: RESULT = new IncrStmt(exp, true); :}
+			 | Expression: exp MINUS MINUS  {: RESULT = new IncrStmt(exp, false); :}
 			 | ExpressionList : exps1 ASSIGN ExpressionList : exps2
 			 {:
 			 	RESULT = new Assignment(exps1,exps2);
 			 :} 
 			 | /*IdentifierList*/ ExpressionList : exps1 DASSIGN ExpressionList : exps2
 			  {:
-				if(exps1 instanceof IdExpression){
-					List<String> id = new LinkedList<>();
-					IdExpression temp;
-					for(Expression i : exps1){
+				List<String> id = new LinkedList<>();
+				for(Expression i : exps1){
+					if(i instanceof IdExpression){
+						IdExpression temp;
 						temp = (IdExpression) i;
 						id.add(temp.name);
 					}
-		 			RESULT = new ShortVarDecl(id,exps2);				
-				}//else RESULT = null;	
+				}
+				RESULT = new ShortVarDecl(id,exps2);	
 			 :} 
 			 | {:RESULT = new  EmptyStmt(); :}; //EmptyStmt
 
@@ -784,15 +775,13 @@ ForStmt ::= FOR Expression : exp Block : body
 		  
 		  | FOR /*IdentifierList*/ ExpressionList : expList DASSIGN RANGE Expression : exp Block : body 
 		  {:
-				ShortVarDecl svd = new ShortVarDecl(null, expList);
-				RESULT = new ForRange(svd, exp,body);
+				RESULT = new ForRange(expList, exp,body);
 		  :}
 		  | FOR ExpressionList: expList ASSIGN RANGE Expression: exp Block: body
 		  {:
-				ShortVarDecl svd = new ShortVarDecl(null, expList);
-				RESULT = new ForRange(svd, exp,body);
+				RESULT = new ForRange(expList, exp, body);
 		  :}
-		  ;		   
+		  ;
 			// ForStmt(Statement initStmt, Expression exp, Statement postStmt, Block body)
 
 
