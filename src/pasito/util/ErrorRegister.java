@@ -3,20 +3,19 @@ package pasito.util;
 import java.util.ArrayList;
 
 public class ErrorRegister {
-	public static ArrayList<Erro> e = new ArrayList<Erro>();
+	private ArrayList<Erro> e = new ArrayList<Erro>();
 	 
-	public static void report(String mensagem) {
+	public void report(String mensagem) {
         e.add(new Erro(mensagem));
-        System.out.println(mensagem);
 	}
 	
-	public static void report(int codigo, String mensagem) {
+	public void report(int codigo, String mensagem) {
         e.add(new Erro(codigo, mensagem));	
-        System.out.println(mensagem);
 	}
 	
 	public void mostrar() {
         if (! e.isEmpty()) {
+        	System.out.println("Erros da checagem de Tipos:"); 
             for (Erro err : e) {
                 System.out.println("[" + err.cod + "] " + err.msg);
             }

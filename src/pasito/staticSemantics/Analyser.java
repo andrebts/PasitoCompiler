@@ -1,5 +1,6 @@
 package pasito.staticSemantics;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -7,6 +8,7 @@ import java.util.ListIterator;
 import pasito.ast.PasitoVisitor;
 import pasito.ast.Program;
 import pasito.ast.declaration.ConstDecl;
+import pasito.ast.declaration.Declaration;
 import pasito.ast.declaration.TypeDecl;
 import pasito.ast.declaration.VarDecl;
 import pasito.ast.element.ExpressionElement;
@@ -45,6 +47,7 @@ import pasito.ast.statement.IfElseStmt;
 import pasito.ast.statement.IfStmt;
 import pasito.ast.statement.ReturnStmt;
 import pasito.ast.statement.ShortVarDecl;
+import pasito.ast.statement.Statement;
 import pasito.ast.topLevelDecl.Dec;
 import pasito.ast.topLevelDecl.FunctionDecl;
 import pasito.ast.topLevelDecl.MethodDecl;
@@ -69,6 +72,7 @@ import pasito.staticSemantics.type.Kind;
 import pasito.staticSemantics.type.PointerTp;
 import pasito.staticSemantics.type.Primitive;
 import pasito.staticSemantics.type.Type;
+import pasito.staticSemantics.type.Untyped;
 import pasito.util.ErrorRegister;
 
 public class Analyser implements PasitoVisitor {
@@ -81,8 +85,8 @@ public class Analyser implements PasitoVisitor {
 		 env = new SymbolTable<>();
 		 
 			 try {
-				env.put("int64", new Ty(Primitive.INT64));
-				env.put("float64", new Ty(Primitive.FLOAT64));
+				env.put("int", new Ty(Primitive.INT32));
+				env.put("float", new Ty(Primitive.FLOAT64));
 				env.put("boolean", new Ty(Primitive.BOOLEAN));
 				// .. Todos os primitivos
 			} catch (AlreadyBoundException e) {
@@ -135,7 +139,6 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitSignature(Signature signature) { 
-		
 		List<Type> pin = new LinkedList<>();
 		List<Type> pout = new LinkedList<>();
 		Type variadic = null;
@@ -162,7 +165,7 @@ public class Analyser implements PasitoVisitor {
 	@Override
 	public Object VisitConstDecl(ConstDecl constDecl) { 
 		if (constDecl.exp == null) {
-			ErrorRegister.report("error: Declaração de Constante NULA");
+			erros.report("error: Declaração de Constante NULA");
 			return null; 
 		} 
 		
@@ -172,31 +175,37 @@ public class Analyser implements PasitoVisitor {
 			try {
 				env.put( constDecl.name, new Const(value, ty) );
 			} catch (AlreadyBoundException e) {
-				ErrorRegister.report("bla bla bla");
+				erros.report("bla bla bla");
 			}
 		else {
 		   Type declaredType = (Type) constDecl.type.accept(this);
 		   try {
 			env.put( constDecl.name, new Const(value, declaredType) );
 		} catch (AlreadyBoundException e) {
-			ErrorRegister.report("bla bla bla");
+			erros.report("bla bla bla");
 		}
 		   if ( !ty.assignableTo(declaredType) )
-			   ErrorRegister.report("...");
+			   erros.report("...");
 		}
 		return null;
 	}
 
-	
 	@Override
 	public Object VisitVarDecl(VarDecl varDecl) { 
-		/*Type ty = (Type) varDecl.exp.accept(this);
-		try {
-			env.put(varDecl.name, new Var(ty));
-		} catch (AlreadyBoundException e) {
-			ErrorRegister.report(varDecl.name + " Variável ja foi declarada!");
-		}*/
-		return null;
+		Iterator<String> idIt = varDecl.names.iterator();
+		Iterator<Expression> expIt = varDecl.exps.iterator();
+		
+		while (idIt.hasNext() && expIt.hasNext()){
+			try {
+				if (varDecl.type != null) 
+					env.put(idIt.next(), new Var((Type) varDecl.type.accept(this)));
+				else
+					env.put(idIt.next(), new Var((Type) expIt.next().accept(this)));
+			} catch (Exception e) {
+				 erros.report("A variável " + idIt.next() + " já foi declarada neste escopo");
+			}
+		}
+        return null;
 	}
 
 	@Override
@@ -231,7 +240,7 @@ public class Analyser implements PasitoVisitor {
 			return new ArrayTp(v,tEle);
 		} // Verificar casos do tipo a[i] onde i é uma variavel
 		else {
-			ErrorRegister.report("Tamanho do Array invalido!");
+			erros.report("Tamanho do Array invalido!");
 			return null; // Obs: retornar um tipo padrao OBjeto
 		}		
 	}
@@ -281,26 +290,98 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitUnaryExpression(UnaryExpression unaryExpression) {
-		// TODO Auto-generated method stub
-		return null;
+		Object value = unaryExpression.exp.accept(this);
+		if (value != null)
+			switch (unaryExpression.op) {
+			case PLUS: 
+				if (value instanceof Integer || value instanceof Float)
+					return value;
+				else {
+					erros.report("Not numeric operand");
+					return null;
+				}
+			case MINUS:
+				if (value instanceof Integer)
+					return - (Integer) value;
+				else if (value instanceof Float)
+					return - (Float) value;
+				else {
+					erros.report("Not numeric operand");
+					return null;
+				}
+			case NOT:
+				if (value instanceof Boolean)
+					return ! ((Boolean) value).booleanValue();
+				else {
+					erros.report("Not boolean operand");
+					return null;
+				}
+			case MULT: 
+			default:
+				erros.report("Cannot point to a constant value");
+				return null;
+			}
+		else
+			return null;
 	}
 
 	@Override
 	public Object VisitBinaryExpression(BinaryExpression binaryExpression) {
-		// TODO Auto-generated method stub
-		return null;
+		Type tipoRetorno = null, tEsq, tDir;
+        Object esq = binaryExpression.leftExp.accept(this);
+        Object dir = binaryExpression.rightExp.accept(this);
+        
+        tEsq = (esq instanceof Var | esq instanceof Const)
+                ? ((Var) esq).type
+                : (Type) esq;
+        
+        tDir = (dir instanceof Var | dir instanceof Const)
+                ? ((Var) dir).type
+                : (Type) dir;
+                
+        switch (binaryExpression.op.name()) {
+	        case "AND":
+			case "OR":
+			case "PLUS":
+			case "MINUS":
+			case "MULT":
+			case "DIV":
+			case "LT":
+			case "ASSIGN":
+				if (tEsq.equivalent(tDir)) {
+	                tipoRetorno = new Primitive(Kind.BOOLEAN);
+	            }
+	            else if (tEsq.equivalent(Primitive.FLOAT64) && tDir.equivalent(Primitive.INT32)) {
+	            	tDir = Primitive.FLOAT64;
+	                tipoRetorno = Primitive.BOOLEAN;
+	            }
+	            else if (tEsq.equivalent(Primitive.INT32) && tDir.equivalent(Primitive.FLOAT64)) {
+	            	tEsq = Primitive.INT32;
+	            	tipoRetorno = Primitive.BOOLEAN;
+	            }
+	            else {
+	                erros.report("Impossível realizar a operação ["
+	                        + binaryExpression.op.name() +  "] entre os tipos " + tEsq
+	                        + " e " + tDir); 
+	                // Retornando bool apenas para prosseguir a checagem sem erros
+	                tipoRetorno = Primitive.BOOLEAN;
+	            }
+	            break;
+			case "EQ":
+			default:
+				return null;
+		}
+        return tipoRetorno;
 	}
 
 	@Override
 	public Object VisitIntLiteral(IntLiteral intLiteral) {
-		// TODO Auto-generated method stub
-		return null;
+		return Primitive.INT32;
 	}
 
 	@Override
 	public Object VisitFloatLiteral(FloatLiteral floatLiteral) {
-		// TODO Auto-generated method stub
-		return null;
+		return Primitive.FLOAT64;
 	}
 
 	@Override
@@ -317,8 +398,7 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitIdExpression(IdExpression idExpression) {
-		// TODO Auto-generated method stub
-		return null;
+		return Primitive.BOOLEAN;
 	}
 
 	@Override
@@ -377,7 +457,7 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitDeclarationStm(DeclarationStm declarationStm) {
-		// TODO Auto-generated method stub
+		declarationStm.decl.accept(this);
 		return null;
 	}
 
@@ -401,11 +481,10 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitAssignment(Assignment assignment) {
-		// TODO Auto-generated method stub
 		List<Expression> leftExps = assignment.leftExps;
 		List<Expression> rightExps = assignment.rightExps;
 		if(leftExps.size() != rightExps.size()) {
-			ErrorRegister.report("...");
+			erros.report("Declaração de atribuição inválida. É necessário que os termos a esquerda e direita sejam do mesmo tamanho.");
 		}else {
 			ListIterator<Expression> lIt = leftExps.listIterator();
 			for(Expression rexp : rightExps) {
@@ -413,7 +492,7 @@ public class Analyser implements PasitoVisitor {
 				Type rTy = (Type) rexp.accept(this);
 				Type lTy = (Type) lexp.accept(this);
 				if(!rTy.assignableTo(lTy)) // testa se a atribuição é equivalentes
-					ErrorRegister.report("...");
+					erros.report("Não é possivel fazer esta atribuição!");
 			}
 		}
 		return null;
@@ -421,14 +500,55 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitShortVarDecl(ShortVarDecl shortVarDecl) {
-		// TODO Auto-generated method stub
-		return null;
+		Iterator<String> idIt = shortVarDecl.names.iterator();
+		Iterator<Expression> expIt = shortVarDecl.exps.iterator();
+		
+		while (idIt.hasNext() && expIt.hasNext()){
+			try {
+				env.put(idIt.next(), new Var((Type) expIt.next().accept(this)));
+			} catch (Exception e) {
+				 erros.report("A variável " + idIt.next() + " já foi declarada neste escopo");
+			}
+		}
+
+        return null;
 	}
 
 	@Override
 	public Object VisitBlock(Block block) {
-		// TODO Auto-generated method stub
+		for (Statement stm : block.stmts) {
+			stm.accept(this);
+		}
 		return null;
+		
+		/*Type t = (Type) block.accept(this);
+        if (! t.equals(Kind.BOOLEAN)) {
+            erros.report("Esperada uma expressão do tipo boolean, recebido argumento tipo" + t + " inválido.");
+        }
+        ifStmt.initStmt.accept(this);
+        ifStmt.block.accept(this);
+        return null;
+        
+		erros.report("Block");
+		return null;
+		
+		StringBuilder result = new StringBuilder();
+
+		result.append("{\n");
+		indent();
+		
+		for (Statement stm : block.stmts) {
+			if (stm instanceof EmptyStmt)
+				continue;
+			if (stm != null) 
+				result.append(print(stm.accept(this), true)); 
+			result.append("\n");
+		}
+		
+		unindent();
+		result.append(print("}", true));
+
+		return result.toString();*/
 	}
 
 	@Override
@@ -481,8 +601,7 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitBoolLiteral(BooleanLiteral boolLiteral) {
-		// TODO Auto-generated method stub
-		return null;
+		return Primitive.BOOLEAN;
 	}
 
 	@Override

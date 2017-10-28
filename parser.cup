@@ -22,6 +22,7 @@ import pasito.util.*;
 
 parser code {:
   protected Lexer lexer;
+  ErrorRegister ERRO = new ErrorRegister();
 :}
 
 /* define how to connect to the scanner! */
@@ -108,7 +109,7 @@ non terminal Block ElseOpt;
 precedence left AND;
 precedence left LT, EQ;
 precedence left PLUS, MINUS;
-precedence left MULT , DIV;
+precedence left MULT, DIV;
 
 Program ::= TopLevelDecl  : topDecs SEMICOLON Program : prog 
              {: prog.declarations.addAll(0,topDecs);
@@ -411,7 +412,6 @@ ConstDecl ::=  CONST IdentifierList : ids
 			:}
 			 | CONST IdentifierList : ids ASSIGN ExpressionList : exps  
 			 {:
-				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();
@@ -423,7 +423,6 @@ ConstDecl ::=  CONST IdentifierList : ids
 			 :}
 			 | CONST IdentifierList : ids Type: type ASSIGN ExpressionList : exps 
 			 {:
-				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();				
 				Iterator<Expression> expIt = exps.iterator();
@@ -587,7 +586,7 @@ ElementList ::= KeyedElement : keyed COMMA ElementList : listElem
 KeyedElement ::=  Element : elm
 				{: RESULT = new KeyedElement(null, elm); :}
 			 	| Element : elm1 COLON Element : elm2
-			 	{: ErrorRegister ERRO = new ErrorRegister();;
+			 	{: 
 					if(elm1 instanceof ExpressionElement){
 						ExpressionElement expElem = (ExpressionElement) elm1;
 						RESULT = new KeyedElement(expElem.exp, elm2);

@@ -174,39 +174,8 @@ public class ConstantExpressionEavaluator implements PasitoVisitor {
 
 	@Override
 	public Object VisitUnaryExpression(UnaryExpression unaryExpression) {
-		Object value = unaryExpression.exp.accept(this);
-		if (value != null)
-			switch (unaryExpression.op) {
-			case PLUS: 
-				if (value instanceof Integer || value instanceof Float)
-					return value;
-				else {
-					ErrorRegister.report("Not numeric operand");
-					return null;
-				}
-			case MINUS:
-				if (value instanceof Integer)
-					return - (Integer) value;
-				else if (value instanceof Float)
-					return - (Float) value;
-				else {
-					ErrorRegister.report("Not numeric operand");
-					return null;
-				}
-			case NOT:
-				if (value instanceof Boolean)
-					return ! ((Boolean) value).booleanValue();
-				else {
-					ErrorRegister.report("Not boolean operand");
-					return null;
-				}
-			case MULT: 
-			default:
-				ErrorRegister.report("Cannot point to a constant value");
-				return null;
-			}
-		else
-			return null;
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override

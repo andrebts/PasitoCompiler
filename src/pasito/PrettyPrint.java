@@ -20,7 +20,6 @@ import java.util.List;
  * Created by ariel on 27/08/17.
  */
 public class PrettyPrint implements PasitoVisitor {
-    public ErrorRegister erros = new ErrorRegister();
 	private int indentLevel = 0;
 	private StringBuilder result = new StringBuilder();
 

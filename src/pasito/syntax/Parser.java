@@ -744,6 +744,7 @@ public class Parser extends java_cup.runtime.lr_parser {
 //@@CUPDBG0
 
   protected Lexer lexer;
+  ErrorRegister ERRO = new ErrorRegister();
 
 
 /** Cup generated class to encapsulate user supplied action code.*/
@@ -1831,7 +1832,6 @@ RESULT = types;
 		List<Expression> exps = (List<Expression>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		//@@CUPDBG68
 
-				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();
 				Iterator<Expression> expIt = exps.iterator();
@@ -1860,7 +1860,6 @@ RESULT = types;
 		List<Expression> exps = (List<Expression>)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		//@@CUPDBG69
 
-				ErrorRegister ERRO = new ErrorRegister();;
 				List<ConstDecl> constDecls = new LinkedList<>();
 				Iterator<String> idIt = ids.iterator();				
 				Iterator<Expression> expIt = exps.iterator();
@@ -2619,7 +2618,7 @@ RESULT = false;
 		Location elm2xright = ((java_cup.runtime.ComplexSymbolFactory.ComplexSymbol)CUP$Parser$stack.peek()).xright;
 		Element elm2 = (Element)((java_cup.runtime.Symbol) CUP$Parser$stack.peek()).value;
 		//@@CUPDBG121
- ErrorRegister ERRO = new ErrorRegister();;
+ 
 					if(elm1 instanceof ExpressionElement){
 						ExpressionElement expElem = (ExpressionElement) elm1;
 						RESULT = new KeyedElement(expElem.exp, elm2);

@@ -14,7 +14,6 @@ public class BinaryExpression extends Expression {
         this.op = op;
         this.leftExp = leftExp;
         this.rightExp = rightExp;
-
     }
 
     @Override

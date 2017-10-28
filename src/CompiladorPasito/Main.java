@@ -7,7 +7,9 @@ import java.io.IOException;
 import java_cup.runtime.ComplexSymbolFactory;
 import java_cup.runtime.Symbol;
 import pasito.PrettyPrint;
+import pasito.Test;
 import pasito.ast.Program;
+import pasito.staticSemantics.Analyser;
 import pasito.syntax.Lexer;
 import pasito.syntax.Parser;
 import pasito.syntax.sym;
@@ -51,22 +53,22 @@ public class Main {
 		
 		/*try {
 			PrettyPrint printer = new PrettyPrint(Test.ProgramTeste());
-			printer.erros.mostrar();
+			//printer..mostrar();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}*/
 		
-		try {
+		/*try {
 	        Parser p = new Parser(new Lexer(new FileReader("input.txt")));
 			Object result = p.parse().value;
 			PrettyPrint printer = new PrettyPrint((Program) result);
-			printer.erros.mostrar();
+			//printer.erros.mostrar();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
+		}*/
 		
 		
-		/*Parser p = null;
+		Parser p = null;
 		try {
 	        p = new Parser(new Lexer(new FileReader("input.txt")));
 		} catch (Exception e) {
@@ -78,24 +80,16 @@ public class Main {
         	Program prog = (Program) analyser.VisitProgram((Program) p.parse().value);
     		PrettyPrint printer = new PrettyPrint(prog);
     		analyser.erros.mostrar();
-    		printer.erros.mostrar();
-		}*/
+		}
         
-        	/*Parser p = new Parser(
-                    new Lexer(new FileReader("input.txt")));
-        	Program result = (Program) p.parse().value;            
-            Analyser analyser = new Analyser();
-            analyser.VisitProgram(result);
-            
-            if (analyser.erros.e.size() > 0) {
-    	        System.out.println("Erros da checagem de Tipos:");    
-                analyser.erros.mostrar();
-			}  
-            
-            PrettyPrint printer = new PrettyPrint(result);
-            if (printer.erros.e.size() > 0) {
-    	        System.out.println("Erros do Printer:");    
-        		printer.erros.mostrar();
-            }*/
+    	/*Parser p = new Parser(
+                new Lexer(new FileReader("input.txt")));
+    	Program result = (Program) p.parse().value;            
+        Analyser analyser = new Analyser();
+        analyser.VisitProgram(result);
+        
+        analyser.erros.mostrar();*/
+        
+        //new PrettyPrint(result);
 	}
 }
