@@ -94,7 +94,6 @@ public class PrettyPrint implements PasitoVisitor {
 	@Override
 	public Object VisitFunctionDecl(FunctionDecl functionDecl) {
 		StringBuilder sb = new StringBuilder();
-		
 		sb.append("func " + functionDecl.name + " ");
 		sb.append(functionDecl.sig.accept(this));
 		sb.append(functionDecl.body.accept(this));

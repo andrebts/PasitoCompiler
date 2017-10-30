@@ -10,7 +10,7 @@ public class SelectorExpression extends Expression {
     public Expression exp;
     public String name;
 
-    public SelectorExpression(Expression exp,String name) {
+    public SelectorExpression(Expression exp, String name) {
         this.exp = exp;
         this.name = name;
     }

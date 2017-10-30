@@ -68,7 +68,7 @@ public class Main {
 		}*/
 		
 		
-		Parser p = null;
+		/*Parser p = null;
 		try {
 	        p = new Parser(new Lexer(new FileReader("input.txt")));
 		} catch (Exception e) {
@@ -80,16 +80,16 @@ public class Main {
         	Program prog = (Program) analyser.VisitProgram((Program) p.parse().value);
     		PrettyPrint printer = new PrettyPrint(prog);
     		analyser.erros.mostrar();
-		}
+        }*/
         
-    	/*Parser p = new Parser(
+    	Parser p = new Parser(
                 new Lexer(new FileReader("input.txt")));
     	Program result = (Program) p.parse().value;            
         Analyser analyser = new Analyser();
         analyser.VisitProgram(result);
         
-        analyser.erros.mostrar();*/
-        
-        //new PrettyPrint(result);
+        new PrettyPrint(result);
+
+        analyser.erros.mostrar();
 	}
 }
