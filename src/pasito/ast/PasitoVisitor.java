@@ -6,7 +6,6 @@ import pasito.ast.declaration.ConstDecl;
 import pasito.ast.declaration.TypeDecl;
 import pasito.ast.declaration.VarDecl;
 import pasito.ast.element.ExpressionElement;
-import pasito.ast.element.Identifier;
 import pasito.ast.element.KeyedElement;
 import pasito.ast.element.LiteralElement;
 import pasito.ast.expression.*;

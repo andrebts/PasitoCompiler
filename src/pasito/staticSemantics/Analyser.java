@@ -12,7 +12,6 @@ import pasito.ast.declaration.Declaration;
 import pasito.ast.declaration.TypeDecl;
 import pasito.ast.declaration.VarDecl;
 import pasito.ast.element.ExpressionElement;
-import pasito.ast.element.Identifier;
 import pasito.ast.element.KeyedElement;
 import pasito.ast.element.LiteralElement;
 import pasito.ast.expression.BinaryExpression;
@@ -114,7 +113,7 @@ public class Analyser implements PasitoVisitor {
 			functionDecl.body.accept(this);
 			env.endScope();
 		} catch (AlreadyBoundException | InvalidLevelException e) {
-			erros.report("\"" + functionDecl.name + "\"" + e.getMessage());
+			erros.report("Função \"" + functionDecl.name + "\"" + e.getMessage());
 		}
 		return null;
 	}
@@ -180,36 +179,51 @@ public class Analyser implements PasitoVisitor {
 	@Override
 	public Object VisitVarDecl(VarDecl varDecl) { 
 		Iterator<String> idIt = varDecl.names.iterator();
-		Iterator<Expression> expIt = varDecl.exps.iterator();
-		
-		while (idIt.hasNext() && expIt.hasNext()){
-			String id = idIt.next();
-			try {
-				Type ty = (Type) expIt.next().accept(this);
+		if (varDecl.exps != null) {
+			Iterator<Expression> expIt = varDecl.exps.iterator();
+			
+			while (idIt.hasNext() && expIt.hasNext()){
+				String id = idIt.next();
+				try {
+					Type ty = (Type) expIt.next().accept(this);
 
-				if (varDecl.type != null) {
-					Type declaredType = (Type) varDecl.type.accept(this);
-					if (!ty.assignableTo(declaredType))
-						env.put(id, new Var(ty));
-				}
-				else 
-					env.put(id, new Var((Type) ty));	
-			} catch (AlreadyBoundException e) {
-				erros.report("Variável \"" + id + "\" já declarada no escopo atual");
-			}		   
+					if (varDecl.type != null) {
+						Type declaredType = (Type) varDecl.type.accept(this);
+						if (!ty.assignableTo(declaredType))
+							env.put(id, new Var(ty));
+					}
+					else 
+						env.put(id, new Var((Type) ty));	
+				} catch (AlreadyBoundException e) {
+					erros.report("Variável \"" + id + "\" já declarada no escopo atual");
+				}		   
+			}
 		}
+		
         return null;
 	}
 
 	@Override
 	public Object VisitTypeDecl(TypeDecl typeDecl) {
-		// TODO Auto-generated method stub
+		try {
+		   Type declaredType = (Type) typeDecl.type.accept(this);
+		   env.put(typeDecl.name, new Ty(declaredType));
+		} catch (AlreadyBoundException e) {
+			erros.report("Tipo \"" + typeDecl.name + "\"" + e.getMessage());
+		}	   
 		return null;
 	}
 
 	@Override
 	public Object VisitFormalParameter(FormalParameter formalParameter) {
-		// TODO Auto-generated method stub
+		try {
+			if (formalParameter.type != null) {
+				Type declaredType = (Type) formalParameter.type.accept(this);
+				env.put(formalParameter.name, new Ty(declaredType));
+			}
+		} catch (AlreadyBoundException e) {
+			erros.report("Parametro \"" + formalParameter.name + "\"" + e.getMessage());
+		}	   
 		return null;
 	}
 
@@ -245,7 +259,10 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitStructType(StructType structType) {
-		return (Type) structType.accept(this);		
+		for (FieldDecl elem : structType.fieldDecls) {
+			elem.accept(this);
+		}
+		return null;
 	}
 
 	@Override
@@ -256,25 +273,36 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitSliceType(SliceType sliceType) {
-		// TODO Auto-generated method stub
+		sliceType.elementType.accept(this);
 		return null;
 	}
 
 	@Override
 	public Object VisitFieldDecl(FieldDecl fieldDecl) {
-		// TODO Auto-generated method stub
+		try {
+			if (fieldDecl.type != null) {
+				Type declaredType = (Type) fieldDecl.type.accept(this);
+				env.put(fieldDecl.name, new Ty(declaredType));
+			}  
+		} catch (AlreadyBoundException e) {
+			erros.report("\"" + fieldDecl.name + "\"" + e.getMessage());
+		}	   
 		return null;
 	}
 
 	@Override
 	public Object VisitMethodSpec(MethodSpec methodSpec) {
-		// TODO Auto-generated method stub
+		try {
+			Binding fun = (Binding) methodSpec.sig.accept(this);
+			env.put(methodSpec.name, fun);
+		} catch (AlreadyBoundException e) {
+			erros.report("Method \"" + methodSpec.name + "\"" + e.getMessage());
+		}
 		return null;
 	}
 
 	@Override
 	public Object VisitInterfaceName(InterfaceName interfaceName) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -338,33 +366,43 @@ public class Analyser implements PasitoVisitor {
 			case "DIV":
 			case "LT":
 			case "ASSIGN":
-				if (tEsq.equivalent(tDir)) {
-	                tipoRetorno = new Primitive(Kind.BOOLEAN);
-	            }
-	            else if (tEsq.equivalent(Primitive.FLOAT64) && tDir.equivalent(Primitive.INT32)) {
-	            	tDir = Primitive.FLOAT64;
-	                tipoRetorno = Primitive.BOOLEAN;
-	            }
-	            else if (tEsq.equivalent(Primitive.INT32) && tDir.equivalent(Primitive.FLOAT64)) {
-	            	tEsq = Primitive.INT32;
-	            	tipoRetorno = Primitive.BOOLEAN;
-	            }
-	            else {
-	                erros.report("Impossível realizar a operação ["
-	                        + binaryExpression.op.name() +  "] entre os tipos " + tEsq
-	                        + " e " + tDir); 
+				if (tEsq != null && tDir != null) {
+					if (tEsq.equivalent(tDir)) {
+		                tipoRetorno = new Primitive(Kind.BOOLEAN);
+		            }
+		            else if (tEsq.equivalent(Primitive.FLOAT64) && tDir.equivalent(Primitive.INT32)) {
+		            	tDir = Primitive.FLOAT64;
+		                tipoRetorno = Primitive.BOOLEAN;
+		            }
+		            else if (tEsq.equivalent(Primitive.INT32) && tDir.equivalent(Primitive.FLOAT64)) {
+		            	tEsq = Primitive.INT32;
+		            	tipoRetorno = Primitive.BOOLEAN;
+		            }
+		            else {
+		                erros.report("Impossível realizar a operação ["
+		                        + binaryExpression.op.name() +  "] entre os tipos " + tEsq
+		                        + " e " + tDir); 
+		                // Retornando bool apenas para prosseguir a checagem sem erros
+		                tipoRetorno = Primitive.BOOLEAN;
+		            }
+				} else
+					erros.report("Atribuição Inválida!"); 
 	                // Retornando bool apenas para prosseguir a checagem sem erros
-	                tipoRetorno = Primitive.BOOLEAN;
-	            }
+	                tipoRetorno = Primitive.BOOLEAN;				
 	            break;
 			case "EQ":
-				if (tEsq.equivalent(tDir)) {
-	                tipoRetorno = new Primitive(Kind.BOOLEAN);
-	            } else {
-	            	erros.report("Impossível realizar a operação ["
-	                        + binaryExpression.op.name() +  "] entre os tipos " + tEsq
-	                        + " e " + tDir); 
-	            }
+				if (tEsq != null && tDir != null) {
+					if (tEsq.equivalent(tDir)) {
+		                tipoRetorno = new Primitive(Kind.BOOLEAN);
+		            } else {
+		            	erros.report("Impossível realizar a operação ["
+		                        + binaryExpression.op.name() +  "] entre os tipos " + tEsq
+		                        + " e " + tDir); 
+		            }
+				} else
+					erros.report("Atribuição Inválida!"); 
+	                // Retornando bool apenas para prosseguir a checagem sem erros
+	                tipoRetorno = Primitive.BOOLEAN;	
 				break;
 			default:
 				return null;
@@ -397,7 +435,12 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitCompositLit(CompositeLit compositeLit) {
-		// TODO Auto-generated method stub
+		if (compositeLit.type != null)
+			compositeLit.type.accept(this);
+  
+		for (KeyedElement iterable_element : compositeLit.elems) {
+			iterable_element.accept(this);
+		}
 		return null;
 	}
 
@@ -408,37 +451,80 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitMethodExpression(MethodExpression methodExpression) {
-		// TODO Auto-generated method stub
+		try {
+			if (methodExpression.type != null) {
+				Type declaredType = (Type) methodExpression.type.accept(this);
+				env.put(methodExpression.name, new Ty(declaredType));
+			}  
+		} catch (AlreadyBoundException e) {
+			erros.report("\"" + methodExpression.name + "\"" + e.getMessage());
+		}	   
 		return null;
 	}
 
 	@Override
 	public Object VisitSelectorExpression(SelectorExpression selectorExpression) {
-		// TODO Auto-generated method stub
+		try {
+			if (selectorExpression.exp != null) {
+				Type declaredType = (Type) selectorExpression.exp.accept(this);
+				env.put(selectorExpression.name, new Ty(declaredType));
+			}  
+		} catch (AlreadyBoundException e) {
+			erros.report("\"" + selectorExpression.name + "\"" + e.getMessage());
+		}	   
 		return null;
 	}
 
 	@Override
 	public Object VisitIndexExpression(IndexExpression indexExpression) {
-		// TODO Auto-generated method stub
+		if (indexExpression.exp != null) 
+			indexExpression.exp.accept(this);
+		if (indexExpression.indexExp != null) 
+			indexExpression.indexExp.accept(this);
 		return null;
 	}
 
 	@Override
 	public Object VisitSliceExpression(SliceExpression sliceExpression) {
-		// TODO Auto-generated method stub
+		if (sliceExpression.exp != null) 
+			sliceExpression.exp.accept(this);
+		if (sliceExpression.high != null) 
+			sliceExpression.high.accept(this);
+		if (sliceExpression.low != null) 
+			sliceExpression.low.accept(this);
 		return null;
 	}
 
 	@Override
 	public Object VisitFullSliceExpression(FullSliceExpression fullSliceExpression) {
-		// TODO Auto-generated method stub
+		if (fullSliceExpression.exp != null) 
+			fullSliceExpression.exp.accept(this);
+		if (fullSliceExpression.high != null) 
+			fullSliceExpression.high.accept(this);
+		if (fullSliceExpression.low != null) 
+			fullSliceExpression.low.accept(this);
+		if (fullSliceExpression.max != null) 
+			fullSliceExpression.max.accept(this);
 		return null;
 	}
 
 	@Override
 	public Object VisitCallExpression(CallExpression callExpression) {
-		// TODO Auto-generated method stub
+		try {
+			Binding b = (Binding) env.get(((IdExpression) callExpression.exp).name);
+			if (b != null) {
+				for (Expression element : callExpression.args) {
+					element.accept(this);
+				}
+				
+				if (callExpression.variadicArg != null) {
+					callExpression.variadicArg.accept(this);
+				}
+			}
+		} catch (Exception e) {
+			erros.report("Não foi possível fazer a chamada.");
+		}
+		
 		return null;
 	}
 
@@ -476,9 +562,10 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitReturnStmt(ReturnStmt returnStmt) {
-		for (Expression e: returnStmt.exps) {
-			e.accept(this);
-		}
+		if (returnStmt.exps != null) 
+			for (Expression e: returnStmt.exps) {
+				e.accept(this);
+			}
 		return null;
 	}
 
@@ -497,19 +584,34 @@ public class Analyser implements PasitoVisitor {
 		}else {
 			ListIterator<Expression> lIt = leftExps.listIterator();
 			for(Expression rexp : rightExps) {
-				Expression lexp = lIt.next();
-				Binding b = (Binding) env.get(((IdExpression) lexp).name);
 				
+				Binding b = null;
+				Expression lexp = lIt.next();
 				if (lexp instanceof IdExpression) {
-					if (b == null) {
-						erros.report("Não é possivel fazer esta atribuição pois não foi possivel encontrar \"" + ((IdExpression) lexp).name + "\" no escopo atual");
-					}
+					b = (Binding) env.get(((IdExpression) lexp).name);
 				}
 				
-				Type rTy = (Type) rexp.accept(this);
+				if (lexp instanceof IndexExpression) {
+					IndexExpression index = ((IndexExpression) lexp);
+					b = (Binding) env.get(((IdExpression) index.exp).name);
+				}
+				
+				if (b == null) {
+					erros.report("Não é possivel fazer esta atribuição pois não foi possivel encontrar o elemento no escopo atual");
+				}
+				
+				Type rTy = null;
+				if (rexp.accept(this) instanceof Var)
+					rTy = ((Var) rexp.accept(this)).type;
+				else
+					rTy = (Type) rexp.accept(this);
+				
 				if (b instanceof Var) {
-					if(!rTy.assignableTo(((Var) b).type)) // testa se a atribuição é equivalentes
-						erros.report("Não é possivel fazer esta atribuição!");
+					if (((Var) b).type != null) {
+						if(!rTy.assignableTo(((Var) b).type)) // testa se a atribuição é equivalentes
+							erros.report("Não é possivel fazer esta atribuição!");
+					}
+					
 				}				
 			}
 		}
@@ -524,7 +626,11 @@ public class Analyser implements PasitoVisitor {
 		while (idIt.hasNext() && expIt.hasNext()){
 			String id = idIt.next();
 			try {
-				env.put(id, new Var((Type) expIt.next().accept(this)));
+				Object v = expIt.next().accept(this);
+				if (v instanceof Var) 				
+					env.put(id, (Var) v);
+				else
+					env.put(id, new Var((Type) v));
 			} catch (AlreadyBoundException e) {
 				 erros.report("A variável " + id + " já foi declarada neste escopo");
 			}
@@ -539,35 +645,6 @@ public class Analyser implements PasitoVisitor {
 			stm.accept(this);
 		}
 		return null;
-		
-		/*Type t = (Type) block.accept(this);
-        if (! t.equals(Kind.BOOLEAN)) {
-            erros.report("Esperada uma expressão do tipo boolean, recebido argumento tipo" + t + " inválido.");
-        }
-        ifStmt.initStmt.accept(this);
-        ifStmt.block.accept(this);
-        return null;
-        
-		erros.report("Block");
-		return null;
-		
-		StringBuilder result = new StringBuilder();
-
-		result.append("{\n");
-		indent();
-		
-		for (Statement stm : block.stmts) {
-			if (stm instanceof EmptyStmt)
-				continue;
-			if (stm != null) 
-				result.append(print(stm.accept(this), true)); 
-			result.append("\n");
-		}
-		
-		unindent();
-		result.append(print("}", true));
-
-		return result.toString();*/
 	}
 
 	@Override
@@ -593,9 +670,10 @@ public class Analyser implements PasitoVisitor {
 	public Object VisitIfElseStmt(IfElseStmt ifElseStmt) {
 		try {
 			Type t = (Type) ifElseStmt.exp.accept(this);
-	        if (!t.equivalent(Primitive.BOOLEAN)) {
-	            erros.report("Esperada uma expressão do tipo boolean, recebido argumento tipo" + t + " inválido.");
-	        }
+			if (t != null)
+		        if (!t.equivalent(Primitive.BOOLEAN)) {
+		            erros.report("Esperada uma expressão do tipo boolean, recebido argumento tipo" + t + " inválido.");
+		        }
 	        
 	        env.beginScope();
 	        if (ifElseStmt.initStmt != null) {
@@ -617,14 +695,47 @@ public class Analyser implements PasitoVisitor {
 
 	@Override
 	public Object VisitForStmt(ForStmt forStmt) {
-		// TODO Auto-generated method stub
+		try {
+			if (forStmt.initStmt != null) {
+				forStmt.initStmt.accept(this);
+			
+				if (forStmt.exp != null) 
+					forStmt.exp.accept(this);
+				
+				if (forStmt.postStmt != null)
+					forStmt.postStmt.accept(this);
+			} else {
+				if (forStmt.exp != null) 
+					forStmt.exp.accept(this);
+			}
+	
+			env.beginScope();
+			forStmt.body.accept(this);
+			env.endScope();
+		} catch (InvalidLevelException e) {
+			erros.report(e.getMessage());
+		}
 		return null;
 	}
 
 	@Override
 	public Object VisitForRange(ForRange forRange) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			if (forRange.exp != null) {
+				for (Expression e : forRange.exp) {
+					e.accept(this);
+				}
+			}
+			
+			forRange.rangExp.accept(this);
+			
+			env.beginScope();
+			forRange.body.accept(this);		
+			env.endScope();
+		} catch (InvalidLevelException e) {
+			erros.report(e.getMessage());
+		}
+		return null;	
 	}
 
 	@Override

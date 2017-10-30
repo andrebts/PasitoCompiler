@@ -3,7 +3,7 @@ package pasito.staticEnvironment;
 public class AlreadyBoundException extends Exception {
     public String log;
     public AlreadyBoundException() {
-        log = " já foi declarada.";
+        log = " já foi declarado(a)";
     }
     
     @Override

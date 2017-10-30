@@ -12,13 +12,20 @@ public class NewType extends Type{
 
 	@Override
 	public boolean equivalent(Type ty) {
-		// TODO Auto-generated method stub
+		if (ty instanceof NewType) {
+			NewType t = (NewType) ty;
+			if (this.underlyingType == t.underlyingType)
+				return true;
+		}
+		
 		return false;
 	}
-
+	
 	@Override
 	public boolean assignableTo(Type ty) {
-		// TODO Auto-generated method stub
+		if (equivalent(ty))
+			return true;
+		
 		return false;
 	}
 }

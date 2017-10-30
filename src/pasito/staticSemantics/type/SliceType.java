@@ -10,16 +10,22 @@ public class SliceType extends Type {
         this.elementType = elementType;
     }
 
-	@Override
+    @Override
 	public boolean equivalent(Type ty) {
-		// TODO Auto-generated method stub
+		if (ty instanceof SliceType) {
+			SliceType t = (SliceType) ty;
+			if (this.elementType == t.elementType)
+				return true;
+		}
+		
 		return false;
 	}
-
+    
 	@Override
 	public boolean assignableTo(Type ty) {
-		// TODO Auto-generated method stub
+		if (equivalent(ty))
+			return true;
+		
 		return false;
 	}
-
 }

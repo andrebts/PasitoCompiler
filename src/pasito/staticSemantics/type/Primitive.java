@@ -21,6 +21,7 @@ public class Primitive extends Type {
 		
 		return false;
 	}
+	
 	@Override
 	public boolean assignableTo(Type ty) {
 		if (equivalent(ty))

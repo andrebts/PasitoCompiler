@@ -10,16 +10,21 @@ public class PointerTp extends Type {
         this.baseType = baseType;
     }
 
-	@Override
+    @Override
 	public boolean equivalent(Type ty) {
-		// TODO Auto-generated method stub
+		if (ty instanceof PointerTp) {
+			PointerTp t = (PointerTp) ty;
+			if (this.baseType == t.baseType)
+				return true;
+		}
+		
 		return false;
 	}
-
 	@Override
 	public boolean assignableTo(Type ty) {
-		// TODO Auto-generated method stub
+		if (equivalent(ty))
+			return true;
+		
 		return false;
 	}
-
 }
